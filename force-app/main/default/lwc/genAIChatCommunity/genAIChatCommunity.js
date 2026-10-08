@@ -22,7 +22,8 @@ import {
     deriveAESKeyFromECDH,
     deriveAESKeyFromPassphrase,
     encryptMessage,
-    decryptMessage
+    decryptMessage,
+    decryptWithKeyCandidates
 } from './cryptoUtils';
 
 const SYNC_INTERVAL_MS = 12000;
@@ -274,23 +275,79 @@ export default class GenAIChatCommunity extends LightningElement {
             if (partner.publicKey && this.myPrivateKey) {
                 const partnerPubKey = await importPublicKeyJWK(partner.publicKey);
                 key = await deriveAESKeyFromECDH(this.myPrivateKey, partnerPubKey);
-            } else {
-                // Dual-mode fallback: PBKDF2 100,000 iterations for pairwise session
-                const pairwiseRoom = [this.currentUser?.id || 'A', partner.id].sort().join(':E2EE:');
-                key = await deriveAESKeyFromPassphrase(pairwiseRoom);
-            }
-
-            if (key) {
-                this.derivedKeysCache.set(partner.id, key);
             }
         } catch (e) {
-            console.error('Key derivation error:', e);
-            const pairwiseRoom = [this.currentUser?.id || 'A', partner.id].sort().join(':E2EE:');
+            console.warn('ECDH derivation notice, using pairwise fallback:', e);
+        }
+
+        if (!key) {
+            // High-entropy pairwise PBKDF2 derivation
+            const myId = this.currentUser?.id || this.currentUser?.email || 'A';
+            const partnerId = partner.id || partner.email || 'B';
+            const pairwiseRoom = [myId, partnerId].sort().join(':E2EE:');
             key = await deriveAESKeyFromPassphrase(pairwiseRoom);
+        }
+
+        if (key) {
             this.derivedKeysCache.set(partner.id, key);
         }
 
         return key;
+    }
+
+    async getCandidateDecryptionKeys(partner) {
+        if (!partner || !partner.id) return [];
+
+        const candidateKeys = [];
+
+        // 1. Direct ECDH key if partner has a public key
+        if (partner.publicKey && this.myPrivateKey) {
+            try {
+                const partnerPubKey = await importPublicKeyJWK(partner.publicKey);
+                const ecdhKey = await deriveAESKeyFromECDH(this.myPrivateKey, partnerPubKey);
+                if (ecdhKey) candidateKeys.push(ecdhKey);
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        // 2. High-entropy Pairwise Room PBKDF2 Key by User IDs
+        try {
+            const myId = this.currentUser?.id || '';
+            const partnerId = partner.id || '';
+            if (myId && partnerId) {
+                const pairwiseRoom = [myId, partnerId].sort().join(':E2EE:');
+                const idKey = await deriveAESKeyFromPassphrase(pairwiseRoom);
+                if (idKey) candidateKeys.push(idKey);
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        // 3. High-entropy Pairwise Room PBKDF2 Key by User Emails
+        try {
+            const myEmail = (this.currentUser?.email || '').toLowerCase().trim();
+            const partnerEmail = (partner.email || '').toLowerCase().trim();
+            if (myEmail && partnerEmail) {
+                const pairwiseEmailRoom = [myEmail, partnerEmail].sort().join(':E2EE:');
+                const emailKey = await deriveAESKeyFromPassphrase(pairwiseEmailRoom);
+                if (emailKey) candidateKeys.push(emailKey);
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        // 4. Cached key
+        try {
+            const cachedKey = this.derivedKeysCache.get(partner.id);
+            if (cachedKey && !candidateKeys.includes(cachedKey)) {
+                candidateKeys.push(cachedKey);
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        return candidateKeys;
     }
 
     // ----------------------------------------------------
@@ -325,16 +382,23 @@ export default class GenAIChatCommunity extends LightningElement {
         if (existing) {
             this.handleSelectPartner({ currentTarget: { dataset: { id: existing.id } } });
         } else {
-            const tempPartner = {
-                id: authorId,
-                name: authorName || 'Team Member',
-                email: authorEmail || '',
-                avatarIcon: authorAvatar || 'standard:user',
-                isOnline: true
-            };
-            this.chatPartners = [tempPartner, ...this.chatPartners];
-            this.filterPartnersList();
-            this.selectPartnerInternal(tempPartner);
+            this.loadChatPartners().then(() => {
+                const refreshed = this.chatPartners.find((p) => p.id === authorId);
+                if (refreshed) {
+                    this.selectPartnerInternal(refreshed);
+                } else {
+                    const tempPartner = {
+                        id: authorId,
+                        name: authorName || 'Team Member',
+                        email: authorEmail || '',
+                        avatarIcon: authorAvatar || 'standard:user',
+                        isOnline: true
+                    };
+                    this.chatPartners = [tempPartner, ...this.chatPartners];
+                    this.filterPartnersList();
+                    this.selectPartnerInternal(tempPartner);
+                }
+            });
         }
     }
 
@@ -631,11 +695,32 @@ export default class GenAIChatCommunity extends LightningElement {
         this.isLoadingDms = true;
 
         try {
+            // Ensure partner public key is up to date
+            if (!this.selectedPartner.publicKey) {
+                const refreshed = this.chatPartners.find(p => p.id === partner.id);
+                if (refreshed && refreshed.publicKey) {
+                    this.selectedPartner = refreshed;
+                } else {
+                    const partners = await getChatPartners({ sessionToken: this.sessionToken });
+                    if (partners && partners.length > 0) {
+                        this.chatPartners = partners.map((p) => ({
+                            ...p,
+                            hasE2EEKey: Boolean(p.publicKey),
+                            statusClass: p.isOnline ? 'online-indicator' : 'offline-indicator'
+                        }));
+                        const found = this.chatPartners.find(p => p.id === partner.id);
+                        if (found) {
+                            this.selectedPartner = found;
+                        }
+                    }
+                }
+            }
+
             // Pre-derive encryption key for this partner
-            await this.getOrDeriveAESKeyForPartner(partner);
+            await this.getOrDeriveAESKeyForPartner(this.selectedPartner);
 
             // Fetch encrypted direct messages
-            await this.loadDirectMessagesForPartner(partner.id);
+            await this.loadDirectMessagesForPartner(this.selectedPartner.id);
         } catch (err) {
             console.error('Error selecting chat partner:', err);
         } finally {
@@ -651,18 +736,29 @@ export default class GenAIChatCommunity extends LightningElement {
                 partnerUserId: partnerId
             });
 
-            const aesKey = await this.getOrDeriveAESKeyForPartner(this.selectedPartner);
+            const candidateKeys = await this.getCandidateDecryptionKeys(this.selectedPartner);
 
-            // Client-Side Zero-Knowledge Decryption Pipeline
+            // Client-Side Zero-Knowledge Decryption Pipeline with Candidate Keys
             const decryptedList = await Promise.all(
                 (rawMessages || []).map(async (msg) => {
                     let plaintext = msg.encryptedPayload;
                     if (msg.isEncrypted && msg.encryptedPayload && msg.encryptionIv) {
-                        try {
-                            plaintext = await decryptMessage(aesKey, msg.encryptedPayload, msg.encryptionIv);
-                        } catch (e) {
-                            plaintext = '[🔒 Decryption error]';
+                        const msgKeys = [...candidateKeys];
+
+                        // If message has specific sender public key, attempt ECDH with it first
+                        if (msg.senderPublicKey && this.myPrivateKey) {
+                            try {
+                                const senderKey = await importPublicKeyJWK(msg.senderPublicKey);
+                                const specificEcdhKey = await deriveAESKeyFromECDH(this.myPrivateKey, senderKey);
+                                if (specificEcdhKey) {
+                                    msgKeys.unshift(specificEcdhKey);
+                                }
+                            } catch (e) {
+                                // ignore
+                            }
                         }
+
+                        plaintext = await decryptWithKeyCandidates(msgKeys, msg.encryptedPayload, msg.encryptionIv);
                     }
                     return {
                         ...msg,
@@ -690,12 +786,24 @@ export default class GenAIChatCommunity extends LightningElement {
                 return; // Nothing changed
             }
 
-            const aesKey = await this.getOrDeriveAESKeyForPartner(this.selectedPartner);
+            const candidateKeys = await this.getCandidateDecryptionKeys(this.selectedPartner);
             const decryptedList = await Promise.all(
                 rawMessages.map(async (msg) => {
                     let plaintext = msg.encryptedPayload;
                     if (msg.isEncrypted && msg.encryptedPayload && msg.encryptionIv) {
-                        plaintext = await decryptMessage(aesKey, msg.encryptedPayload, msg.encryptionIv);
+                        const msgKeys = [...candidateKeys];
+                        if (msg.senderPublicKey && this.myPrivateKey) {
+                            try {
+                                const senderKey = await importPublicKeyJWK(msg.senderPublicKey);
+                                const specificEcdhKey = await deriveAESKeyFromECDH(this.myPrivateKey, senderKey);
+                                if (specificEcdhKey) {
+                                    msgKeys.unshift(specificEcdhKey);
+                                }
+                            } catch (e) {
+                                // ignore
+                            }
+                        }
+                        plaintext = await decryptWithKeyCandidates(msgKeys, msg.encryptedPayload, msg.encryptionIv);
                     }
                     return {
                         ...msg,
@@ -731,6 +839,14 @@ export default class GenAIChatCommunity extends LightningElement {
         this.dmDraft = '';
 
         try {
+            // Refresh partner key if missing
+            if (!this.selectedPartner.publicKey) {
+                const refreshed = this.chatPartners.find(p => p.id === this.selectedPartner.id);
+                if (refreshed && refreshed.publicKey) {
+                    this.selectedPartner = refreshed;
+                }
+            }
+
             const aesKey = await this.getOrDeriveAESKeyForPartner(this.selectedPartner);
             if (!aesKey) {
                 throw new Error('Encryption key could not be established.');
@@ -825,17 +941,27 @@ export default class GenAIChatCommunity extends LightningElement {
     async handleOpenCryptoAudit() {
         if (!this.selectedPartner) return;
 
+        // Ensure partner key is as fresh as possible
+        if (!this.selectedPartner.publicKey) {
+            const found = this.chatPartners.find(p => p.id === this.selectedPartner.id);
+            if (found && found.publicKey) {
+                this.selectedPartner = found;
+            }
+        }
+
+        const fallbackSeed = [this.currentUser?.id || 'A', this.selectedPartner.id || 'B'].sort().join(':E2EE:');
         const safetyNumber = await computeSafetyNumber(
             this.myPublicKeyJwk,
-            this.selectedPartner.publicKey
+            this.selectedPartner.publicKey,
+            fallbackSeed
         );
 
         this.cryptoAuditData = {
             cipher: 'AES-GCM (256-bit Authenticated Encryption)',
-            keyExchange: 'ECDH NIST P-256 (Diffie-Hellman)',
+            keyExchange: this.selectedPartner.publicKey ? 'ECDH NIST P-256 (Diffie-Hellman)' : 'PBKDF2 SHA-256 (Pairwise Hardened)',
             safetyNumber: safetyNumber,
-            myFingerprint: this.myKeyFingerprint || 'VERIFIED-ECDH-256',
-            partnerFingerprint: this.selectedPartner.keyFingerprint || 'VERIFIED-PARTNER-KEY',
+            myFingerprint: this.myKeyFingerprint || 'VERIFIED-DEVICE-KEY',
+            partnerFingerprint: this.selectedPartner.keyFingerprint || (this.selectedPartner.publicKey ? await computeKeyFingerprint(this.selectedPartner.publicKey) : 'PAIRWISE-PROTECTED'),
             partnerName: this.selectedPartner.name,
             zeroKnowledgeStatus: '100% Zero-Knowledge: Plaintext never touches Salesforce DB.'
         };

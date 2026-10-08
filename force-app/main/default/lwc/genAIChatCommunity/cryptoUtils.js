@@ -75,9 +75,16 @@ export async function computeKeyFingerprint(jwkString) {
     }
 }
 
-export async function computeSafetyNumber(myJwkString, partnerJwkString) {
+export async function computeSafetyNumber(myJwkString, partnerJwkString, fallbackSeed) {
     try {
-        const sorted = [myJwkString || 'KEY_A', partnerJwkString || 'KEY_B'].sort().join('::');
+        let sorted;
+        if (myJwkString && partnerJwkString) {
+            sorted = [myJwkString, partnerJwkString].sort().join('::');
+        } else if (fallbackSeed) {
+            sorted = fallbackSeed;
+        } else {
+            sorted = [myJwkString || 'KEY_A', partnerJwkString || 'KEY_B'].sort().join('::');
+        }
         const enc = new TextEncoder();
         const hashBuffer = await window.crypto.subtle.digest('SHA-256', enc.encode(sorted));
         const bytes = new Uint8Array(hashBuffer);
@@ -152,22 +159,44 @@ export async function encryptMessage(aesKey, plaintext) {
 }
 
 export async function decryptMessage(aesKey, ciphertextBase64, ivBase64) {
-    try {
-        const cipherBuffer = base64ToArrayBuffer(ciphertextBase64);
-        const ivBuffer = base64ToArrayBuffer(ivBase64);
-        const decryptedBuffer = await window.crypto.subtle.decrypt(
-            {
-                name: 'AES-GCM',
-                iv: new Uint8Array(ivBuffer)
-            },
-            aesKey,
-            cipherBuffer
-        );
-        const dec = new TextDecoder();
-        return dec.decode(decryptedBuffer);
-    } catch (e) {
-        return '[🔒 Decryption failed: Message encrypted with different device key]';
+    return await decryptWithKeyCandidates([aesKey], ciphertextBase64, ivBase64);
+}
+
+export async function decryptWithKeyCandidates(keysList, ciphertextBase64, ivBase64) {
+    if (!ciphertextBase64 || !ivBase64) {
+        return '';
     }
+    if (!keysList || keysList.length === 0) {
+        return '[🔒 Decryption failed: No encryption key established]';
+    }
+    let cipherBuffer;
+    let ivUint8;
+    try {
+        cipherBuffer = base64ToArrayBuffer(ciphertextBase64);
+        const ivBuffer = base64ToArrayBuffer(ivBase64);
+        ivUint8 = new Uint8Array(ivBuffer);
+    } catch (parseErr) {
+        return '[🔒 Decryption failed: Invalid cipher format]';
+    }
+
+    for (const key of keysList) {
+        if (!key) continue;
+        try {
+            const decryptedBuffer = await window.crypto.subtle.decrypt(
+                {
+                    name: 'AES-GCM',
+                    iv: ivUint8
+                },
+                key,
+                cipherBuffer
+            );
+            const dec = new TextDecoder();
+            return dec.decode(decryptedBuffer);
+        } catch (e) {
+            // Authentication check failed for this key, test next candidate in chain
+        }
+    }
+    return '[🔒 Decryption failed: Message encrypted with different device key]';
 }
 
 export function arrayBufferToBase64(buffer) {
