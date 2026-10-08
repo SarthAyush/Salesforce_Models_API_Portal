@@ -741,6 +741,10 @@ export default class GenAIChatCommunity extends LightningElement {
                 this.liveVoiceTranscriptCommunity = combined;
                 const prefix = this.voiceBaseCommunityDraft ? this.voiceBaseCommunityDraft.trim() + ' ' : '';
                 this.newPostContent = prefix + combined;
+                const textarea = this.template.querySelector('.composer-textarea');
+                if (textarea) {
+                    textarea.value = this.newPostContent;
+                }
             };
 
             this.voiceRecognitionCommunity.onerror = (event) => {
@@ -783,7 +787,8 @@ export default class GenAIChatCommunity extends LightningElement {
         if (this.isVoiceTypingCommunity) {
             this.handleFinishCommunityVoiceInput();
         } else {
-            this.voiceBaseCommunityDraft = this.newPostContent || '';
+            const textarea = this.template.querySelector('.composer-textarea');
+            this.voiceBaseCommunityDraft = textarea ? textarea.value : (this.newPostContent || '');
             this.voiceAccumulatedCommunity = '';
             this.liveVoiceTranscriptCommunity = '';
             this.isVoiceTypingCommunity = true;
@@ -798,6 +803,11 @@ export default class GenAIChatCommunity extends LightningElement {
 
     handleFinishCommunityVoiceInput() {
         this.isVoiceTypingCommunity = false;
+        const textarea = this.template.querySelector('.composer-textarea');
+        if (textarea) {
+            textarea.value = this.newPostContent;
+            textarea.focus();
+        }
         if (this.voiceRecognitionCommunity) {
             try {
                 this.voiceRecognitionCommunity.stop();
@@ -834,6 +844,10 @@ export default class GenAIChatCommunity extends LightningElement {
                 this.liveVoiceTranscriptDm = combined;
                 const prefix = this.voiceBaseDmDraft ? this.voiceBaseDmDraft.trim() + ' ' : '';
                 this.dmDraft = prefix + combined;
+                const textarea = this.template.querySelector('.dm-textarea');
+                if (textarea) {
+                    textarea.value = this.dmDraft;
+                }
             };
 
             this.voiceRecognitionDm.onerror = (event) => {
@@ -876,7 +890,8 @@ export default class GenAIChatCommunity extends LightningElement {
         if (this.isVoiceTypingDm) {
             this.handleFinishDmVoiceInput();
         } else {
-            this.voiceBaseDmDraft = this.dmDraft || '';
+            const textarea = this.template.querySelector('.dm-textarea');
+            this.voiceBaseDmDraft = textarea ? textarea.value : (this.dmDraft || '');
             this.voiceAccumulatedDm = '';
             this.liveVoiceTranscriptDm = '';
             this.isVoiceTypingDm = true;
@@ -891,6 +906,11 @@ export default class GenAIChatCommunity extends LightningElement {
 
     handleFinishDmVoiceInput() {
         this.isVoiceTypingDm = false;
+        const textarea = this.template.querySelector('.dm-textarea');
+        if (textarea) {
+            textarea.value = this.dmDraft;
+            textarea.focus();
+        }
         if (this.voiceRecognitionDm) {
             try {
                 this.voiceRecognitionDm.stop();

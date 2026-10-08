@@ -1723,6 +1723,10 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
                 // Live stream directly into user input in real time as user speaks!
                 const basePrefix = this.voiceBaseInput ? this.voiceBaseInput.trim() + ' ' : '';
                 this.userInput = basePrefix + currentCombined;
+                const textarea = this.template.querySelector('.native-chat-textarea');
+                if (textarea) {
+                    textarea.value = this.userInput;
+                }
                 this.adjustTextareaHeight();
                 this.scrollToBottom();
             };
@@ -1773,7 +1777,8 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
     }
 
     startSpeechRecognition() {
-        this.voiceBaseInput = this.userInput || '';
+        const textarea = this.template.querySelector('.native-chat-textarea');
+        this.voiceBaseInput = textarea ? textarea.value : (this.userInput || '');
         this.voiceAccumulatedText = '';
         this.liveVoiceTranscript = '';
         this.isListening = true;
@@ -1797,12 +1802,21 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
     }
 
     handleFinishVoiceInput() {
+        const textarea = this.template.querySelector('.native-chat-textarea');
+        if (textarea) {
+            textarea.value = this.userInput;
+            textarea.focus();
+        }
         this.stopSpeechRecognition();
         this.showToast('Voice Input Completed', 'Transcription inserted into your chat composer.', 'success');
     }
 
     handleCancelVoiceInput() {
         this.userInput = this.voiceBaseInput || '';
+        const textarea = this.template.querySelector('.native-chat-textarea');
+        if (textarea) {
+            textarea.value = this.userInput;
+        }
         this.liveVoiceTranscript = '';
         this.stopSpeechRecognition();
     }
