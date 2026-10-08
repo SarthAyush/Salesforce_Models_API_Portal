@@ -436,7 +436,7 @@
                                     <template for:each={filteredPartners} for:item="partner">
                                         <div 
                                             key={partner.id} 
-                                            class="partner-card-item" 
+                                            class={partner.cardClass} 
                                             data-id={partner.id} 
                                             onclick={handleSelectPartner}>
                                             <div class="partner-avatar-wrapper">

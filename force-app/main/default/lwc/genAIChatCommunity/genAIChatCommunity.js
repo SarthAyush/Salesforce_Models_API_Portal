@@ -556,6 +556,11 @@ export default class GenAIChatCommunity extends LightningElement {
     async handlePublishPost() {
         if (!this.newPostContent || !this.newPostContent.trim()) return;
 
+        if (this.isVoiceTypingCommunity) {
+            this.handleFinishCommunityVoiceInput();
+        }
+        this.liveVoiceTranscriptCommunity = '';
+
         this.isPublishing = true;
         const parentId = this.replyingToPost ? this.replyingToPost.id : null;
 
@@ -738,17 +743,29 @@ export default class GenAIChatCommunity extends LightningElement {
                 this.newPostContent = prefix + combined;
             };
 
-            this.voiceRecognitionCommunity.onerror = () => {
-                this.isVoiceTypingCommunity = false;
+            this.voiceRecognitionCommunity.onerror = (event) => {
+                console.warn('Community voice recognition status:', event?.error);
+                if (event?.error === 'not-allowed' || event?.error === 'service-not-allowed') {
+                    this.isVoiceTypingCommunity = false;
+                    this.showToast('Microphone Blocked', 'Microphone permission was denied. Please allow microphone access in your browser settings.', 'warning');
+                } else if (event?.error !== 'no-speech') {
+                    this.isVoiceTypingCommunity = false;
+                }
             };
 
             this.voiceRecognitionCommunity.onend = () => {
                 if (this.isVoiceTypingCommunity) {
-                    try {
-                        this.voiceRecognitionCommunity.start();
-                    } catch (e) {
-                        this.isVoiceTypingCommunity = false;
-                    }
+                    setTimeout(() => {
+                        if (this.isVoiceTypingCommunity && this.voiceRecognitionCommunity) {
+                            try {
+                                this.voiceRecognitionCommunity.start();
+                            } catch (e) {
+                                if (e.name !== 'InvalidStateError') {
+                                    this.isVoiceTypingCommunity = false;
+                                }
+                            }
+                        }
+                    }, 250);
                 }
             };
         }
@@ -819,17 +836,29 @@ export default class GenAIChatCommunity extends LightningElement {
                 this.dmDraft = prefix + combined;
             };
 
-            this.voiceRecognitionDm.onerror = () => {
-                this.isVoiceTypingDm = false;
+            this.voiceRecognitionDm.onerror = (event) => {
+                console.warn('DM voice recognition status:', event?.error);
+                if (event?.error === 'not-allowed' || event?.error === 'service-not-allowed') {
+                    this.isVoiceTypingDm = false;
+                    this.showToast('Microphone Blocked', 'Microphone permission was denied. Please allow microphone access in your browser settings.', 'warning');
+                } else if (event?.error !== 'no-speech') {
+                    this.isVoiceTypingDm = false;
+                }
             };
 
             this.voiceRecognitionDm.onend = () => {
                 if (this.isVoiceTypingDm) {
-                    try {
-                        this.voiceRecognitionDm.start();
-                    } catch (e) {
-                        this.isVoiceTypingDm = false;
-                    }
+                    setTimeout(() => {
+                        if (this.isVoiceTypingDm && this.voiceRecognitionDm) {
+                            try {
+                                this.voiceRecognitionDm.start();
+                            } catch (e) {
+                                if (e.name !== 'InvalidStateError') {
+                                    this.isVoiceTypingDm = false;
+                                }
+                            }
+                        }
+                    }, 250);
                 }
             };
         }
@@ -895,15 +924,18 @@ export default class GenAIChatCommunity extends LightningElement {
     }
 
     filterPartnersList() {
-        if (!this.partnerSearchKey) {
-            this.filteredPartners = [...this.chatPartners];
-            return;
-        }
-        this.filteredPartners = this.chatPartners.filter(
-            (p) =>
-                p.name?.toLowerCase().includes(this.partnerSearchKey) ||
-                p.email?.toLowerCase().includes(this.partnerSearchKey)
-        );
+        const query = (this.partnerSearchKey || '').trim().toLowerCase();
+        const base = !query 
+            ? this.chatPartners 
+            : this.chatPartners.filter(
+                (p) => p.name?.toLowerCase().includes(query) || p.email?.toLowerCase().includes(query)
+            );
+        this.filteredPartners = (base || []).map((p) => ({
+            ...p,
+            cardClass: (this.selectedPartner && this.selectedPartner.id === p.id) 
+                ? 'partner-card-item active' 
+                : 'partner-card-item'
+        }));
     }
 
     async handleSelectPartner(event) {
@@ -916,6 +948,7 @@ export default class GenAIChatCommunity extends LightningElement {
 
     async selectPartnerInternal(partner) {
         this.selectedPartner = partner;
+        this.filterPartnersList();
         this.directMessages = [];
         this.isLoadingDms = true;
 
@@ -1058,6 +1091,11 @@ export default class GenAIChatCommunity extends LightningElement {
 
     async handleSendDirectMessage() {
         if (!this.dmDraft || !this.dmDraft.trim() || !this.selectedPartner || this.isSendingDm) return;
+
+        if (this.isVoiceTypingDm) {
+            this.handleFinishDmVoiceInput();
+        }
+        this.liveVoiceTranscriptDm = '';
 
         let plaintext = this.dmDraft.trim();
         if (this.isEphemeralMode) {

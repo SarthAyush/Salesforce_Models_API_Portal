@@ -42,7 +42,8 @@ export default class GenAIChatAdmin extends LightningElement {
     @track userFilterCategory = 'all'; // 'all', 'connected', 'admins', 'frozen'
 
     get computedContainerClass() {
-        return 'admin-dashboard-container light-theme';
+        const isDark = this.theme === 'midnight-dark';
+        return `admin-dashboard-container theme-${this.theme || 'slate-indigo'} ${isDark ? 'dark-theme' : 'light-theme'}`;
     }
 
     // User Configuration Modal State

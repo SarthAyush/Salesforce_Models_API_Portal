@@ -38,7 +38,7 @@
         </header>
 
         <!-- LOADING STATE -->
-        <template lwc:if={isLoading}>
+        <template if:true={isLoading}>
             <div class="admin-loading-wrapper">
                 <div class="admin-spinner"></div>
                 <span class="loading-label">Aggregating system analytics, bar graph metrics, and user access records...</span>
@@ -46,7 +46,7 @@
         </template>
 
         <!-- MAIN DASHBOARD CONTENT -->
-        <template lwc:else>
+        <template if:false={isLoading}>
             <div class="admin-content-scroll">
                 <!-- TOP KPI CARDS (8 High-Yield Dimensions) -->
                 <div class="kpi-grid">
@@ -194,7 +194,7 @@
                 </div>
 
                 <!-- TAB 1: VISUAL ANALYTICS & BAR GRAPHS -->
-                <template lwc:if={isTabOverview}>
+                <template if:true={isTabOverview}>
                     <div class="overview-grid">
                         <!-- 7-DAY ACTIVITY TREND BAR GRAPH -->
                         <div class="panel-card full-width-card">
@@ -262,7 +262,7 @@
                                 </div>
                             </div>
 
-                            <template lwc:if={hasModelBreakdown}>
+                            <template if:true={hasModelBreakdown}>
                                 <div class="model-breakdown-list">
                                     <template for:each={formattedModelBreakdown} for:item="mb">
                                         <div key={mb.modelName} class="model-usage-item">
@@ -277,7 +277,7 @@
                                     </template>
                                 </div>
                             </template>
-                            <template lwc:else>
+                            <template if:false={hasModelBreakdown}>
                                 <div class="empty-placeholder">
                                     <p>No model usage records found yet.</p>
                                 </div>
@@ -287,7 +287,7 @@
                 </template>
 
                 <!-- TAB 2: USER CONSUMPTION & MANAGEMENT -->
-                <template lwc:if={isTabUsers}>
+                <template if:true={isTabUsers}>
                     <div class="panel-card full-width">
                         <div class="panel-header">
                             <div class="panel-title-group">
@@ -433,7 +433,7 @@
                 </template>
 
                 <!-- TAB 3: SESSION AUDIT LOGS -->
-                <template lwc:if={isTabAudit}>
+                <template if:true={isTabAudit}>
                     <div class="panel-card full-width">
                         <div class="panel-header">
                             <div class="panel-title-group">

@@ -1729,19 +1729,28 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
 
             this.speechRecognition.onerror = (event) => {
                 console.warn('Speech recognition status:', event.error);
-                if (event.error !== 'no-speech') {
+                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    this.isListening = false;
+                    this.showToast('Microphone Blocked', 'Microphone permission was denied. Please allow microphone access in your browser settings.', 'warning');
+                } else if (event.error !== 'no-speech') {
                     this.isListening = false;
                 }
             };
 
             this.speechRecognition.onend = () => {
-                // If user didn't explicitly terminate, keep streaming alive
+                // If user didn't explicitly terminate, restart after a short debounce
                 if (this.isListening) {
-                    try {
-                        this.speechRecognition.start();
-                    } catch (e) {
-                        this.isListening = false;
-                    }
+                    setTimeout(() => {
+                        if (this.isListening && this.speechRecognition) {
+                            try {
+                                this.speechRecognition.start();
+                            } catch (e) {
+                                if (e.name !== 'InvalidStateError') {
+                                    this.isListening = false;
+                                }
+                            }
+                        }
+                    }, 250);
                 }
             };
         }
@@ -2266,6 +2275,9 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
                 return;
             }
             event.preventDefault();
+            if (this.isListening) {
+                this.stopSpeechRecognition();
+            }
             this.sendMessage();
         }
     }
@@ -2429,6 +2441,11 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
 
     async sendMessage() {
         if (this.isSendDisabled) return;
+
+        if (this.isListening) {
+            this.stopSpeechRecognition();
+        }
+        this.liveVoiceTranscript = '';
 
         if (this.currentUser && this.currentUser.canChat === false) {
             this.showToast('Access Restricted', 'Your account does not have permission to initiate chat sessions. Please contact your administrator.', 'error');

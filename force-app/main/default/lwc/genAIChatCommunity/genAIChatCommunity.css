@@ -1117,6 +1117,11 @@
     background: #f1f5f9;
 }
 
+.partner-card-item.active {
+    background: #eef2ff;
+    border-left: 3px solid #4f46e5;
+}
+
 .partner-avatar-wrapper {
     position: relative;
     width: 38px;
@@ -1738,6 +1743,11 @@
 
 .dark-theme .partner-card-item:hover {
     background: #334155;
+}
+
+.dark-theme .partner-card-item.active {
+    background: rgba(99, 102, 241, 0.25);
+    border-left: 3px solid #6366f1;
 }
 
 .dark-theme .partner-name {
