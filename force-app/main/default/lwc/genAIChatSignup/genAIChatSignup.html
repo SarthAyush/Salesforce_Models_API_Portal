@@ -1,0 +1,161 @@
+<template>
+    <div class={computedContainerClass}>
+        <div class="auth-card">
+            <!-- Header -->
+            <div class="auth-header">
+                <div class="auth-brand-badge">
+                    <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                    </svg>
+                    <span>Intelligence Portal</span>
+                </div>
+                <h1 class="auth-title">Create Account</h1>
+                <p class="auth-subtitle">Register to unlock unlimited conversations, saved histories, and customized AI parameters.</p>
+            </div>
+
+            <!-- Error Banner -->
+            <template lwc:if={errorMessage}>
+                <div class="auth-error-banner" role="alert">
+                    <svg class="error-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <span>{errorMessage}</span>
+                </div>
+            </template>
+
+            <!-- Signup Form -->
+            <form onsubmit={handleSignupSubmit} class="auth-form">
+                <!-- Full Name -->
+                <div class="form-group">
+                    <label class="form-label" for="signup-name">Display Name</label>
+                    <div class="input-wrapper">
+                        <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                        <input
+                            id="signup-name"
+                            type="text"
+                            class="form-input"
+                            placeholder="Alex Morgan"
+                            value={name}
+                            oninput={handleNameChange}
+                            required
+                        />
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label class="form-label" for="signup-email">Email Address</label>
+                    <div class="input-wrapper">
+                        <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                        <input
+                            id="signup-email"
+                            type="email"
+                            class="form-input"
+                            placeholder="alex@company.com"
+                            value={email}
+                            oninput={handleEmailChange}
+                            required
+                            autocomplete="email"
+                        />
+                    </div>
+                </div>
+
+                <!-- Password and Confirm Password Row -->
+                <div class="form-row">
+                    <div class="form-group form-col">
+                        <label class="form-label" for="signup-password">Password</label>
+                        <div class="input-wrapper">
+                            <input
+                                id="signup-password"
+                                type={passwordInputType}
+                                class="form-input"
+                                placeholder="Min 6 chars"
+                                value={password}
+                                oninput={handlePasswordChange}
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div class="form-group form-col">
+                        <label class="form-label" for="signup-confirm-password">Confirm</label>
+                        <div class="input-wrapper">
+                            <input
+                                id="signup-confirm-password"
+                                type={passwordInputType}
+                                class="form-input"
+                                placeholder="Repeat"
+                                value={confirmPassword}
+                                oninput={handleConfirmPasswordChange}
+                                required
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password visibility toggle checkbox -->
+                <div class="form-checkbox-row">
+                    <input type="checkbox" id="show-passwords" checked={showPassword} onchange={togglePasswordVisibility} />
+                    <label for="show-passwords" class="checkbox-label">Show passwords</label>
+                </div>
+
+                <!-- Avatar Selection -->
+                <div class="form-group">
+                    <label class="form-label">Select Profile Avatar</label>
+                    <div class="avatar-selection-grid">
+                        <template for:each={avatarOptions} for:item="opt">
+                            <button
+                                key={opt.name}
+                                type="button"
+                                class={opt.cssClass}
+                                data-avatar={opt.name}
+                                onclick={handleSelectAvatar}
+                                title={opt.label}
+                            >
+                                <lightning-icon icon-name={opt.name} size="small" variant="inverse"></lightning-icon>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Bio -->
+                <div class="form-group">
+                    <label class="form-label" for="signup-bio">Bio / Role (Optional)</label>
+                    <input
+                        id="signup-bio"
+                        type="text"
+                        class="form-input bio-input"
+                        placeholder="e.g. Solutions Architect / AI Specialist"
+                        value={bio}
+                        oninput={handleBioChange}
+                        maxlength="200"
+                    />
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="submit-btn" disabled={isLoading}>
+                    <template lwc:if={isLoading}>
+                        <span class="spinner"></span>
+                        <span>Creating Profile...</span>
+                    </template>
+                    <template lwc:else>
+                        <span>Complete Registration</span>
+                        <svg class="arrow-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </template>
+                </button>
+            </form>
+
+            <!-- Footer Switcher -->
+            <div class="auth-footer">
+                <span>Already registered?</span>
+                <button type="button" class="switch-link-btn" onclick={handleSwitchToLogin}>Sign In</button>
+            </div>
+        </div>
+    </div>
+</template>

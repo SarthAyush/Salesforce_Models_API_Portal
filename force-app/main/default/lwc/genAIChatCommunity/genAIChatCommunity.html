@@ -1,0 +1,640 @@
+<template>
+    <div class={computedContainerClass}>
+        <!-- AMBIENT GLOW BACKDROP -->
+        <div class="ambient-glow cyan-ambient"></div>
+        <div class="ambient-glow indigo-ambient"></div>
+
+        <!-- COMMUNITY & E2EE HEADER -->
+        <header class="community-header">
+            <div class="header-left">
+                <button class="back-nav-btn" onclick={handleBackToChat} title="Return to AI Chat">
+                    <lightning-icon icon-name="utility:back" size="xx-small" class="back-icon"></lightning-icon>
+                    <span>Back to Chat</span>
+                </button>
+                <div class="community-title-block">
+                    <div class="hub-icon-pill">
+                        <lightning-icon icon-name="standard:collaboration" size="small"></lightning-icon>
+                    </div>
+                    <div>
+                        <h1 class="hub-main-title">Collaboration & Security Hub</h1>
+                        <p class="hub-subtitle">Real-time team threads & zero-knowledge encrypted messaging</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODE SWITCHER TABS -->
+            <div class="header-center-modes">
+                <button 
+                    class={communityModeTabClass} 
+                    onclick={handleSwitchToCommunityFeed} 
+                    title="Public discussions and threaded prompt sharing">
+                    <lightning-icon icon-name="utility:topic2" size="xx-small" class="mode-icon"></lightning-icon>
+                    <span>Discussions & Threads</span>
+                </button>
+                <button 
+                    class={dmModeTabClass} 
+                    onclick={handleSwitchToDirectMessages} 
+                    title="End-to-End Encrypted 1-on-1 direct personal messaging">
+                    <lightning-icon icon-name="utility:lock" size="xx-small" class="mode-icon"></lightning-icon>
+                    <span>Private Messages (E2EE)</span>
+                    <span class="e2ee-badge-chip">AES-256</span>
+                </button>
+            </div>
+
+            <div class="header-right">
+                <div class="live-sync-indicator" title="Connected to Real-Time Feed">
+                    <span class="pulsing-dot"></span>
+                    <span class="sync-status-text">Live Sync</span>
+                </div>
+                <button class="action-btn-secondary" onclick={handleRefresh} title="Sync latest data">
+                    <lightning-icon icon-name="utility:refresh" size="xx-small" class="btn-icon"></lightning-icon>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ==================================================== -->
+        <!-- VIEW 1: PUBLIC COMMUNITY DISCUSSIONS & REPLIES       -->
+        <!-- ==================================================== -->
+        <template if:true={isCommunityView}>
+            <!-- RESTRICTION BANNER IF CAN_USE_COMMUNITY IS FALSE -->
+            <template if:true={isCommunityRestricted}>
+                <div class="restriction-banner">
+                    <lightning-icon icon-name="utility:warning" size="small" class="warning-icon"></lightning-icon>
+                    <div class="restriction-text">
+                        <strong>Community Access Restricted:</strong> Your account does not have permission to post new discussions or replies. You can view existing messages in read-only mode.
+                    </div>
+                </div>
+            </template>
+
+            <!-- MAIN COMMUNITY CONTAINER -->
+            <main class="community-container">
+                <!-- TAG FILTER PILLS BAR -->
+                <div class="tag-filters-bar">
+                    <template for:each={filterTabs} for:item="tab">
+                        <button 
+                            key={tab.name} 
+                            class={tab.cssClass} 
+                            data-tag={tab.name} 
+                            onclick={handleSelectTag}>
+                            <span>{tab.label}</span>
+                        </button>
+                    </template>
+                </div>
+
+                <!-- NEW DISCUSSION / REPLY COMPOSER -->
+                <template if:false={isCommunityRestricted}>
+                    <section class="composer-card">
+                        <!-- QUOTE BANNER IF REPLYING TO A POST -->
+                        <template if:true={replyingToPost}>
+                            <div class="reply-target-banner">
+                                <div class="reply-banner-left">
+                                    <lightning-icon icon-name="utility:reply" size="xx-small" class="reply-banner-icon"></lightning-icon>
+                                    <span class="replying-label">Replying to <strong>@{replyingToPost.authorName}</strong>:</span>
+                                    <span class="replying-snippet">"{replyingToPost.snippet}"</span>
+                                </div>
+                                <button class="cancel-reply-btn" onclick={handleCancelReplyQuote} title="Cancel reply context">
+                                    <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                                    <span>Cancel</span>
+                                </button>
+                            </div>
+                        </template>
+
+                        <div class="composer-header">
+                            <div class="composer-author-info">
+                                <div class="author-avatar-chip">
+                                    <lightning-icon icon-name={currentUserAvatar} size="xx-small"></lightning-icon>
+                                </div>
+                                <span class="author-name-text">{currentUserName}</span>
+                                <template if:true={isCurrentUserAdmin}>
+                                    <span class="admin-pill">Admin</span>
+                                </template>
+                            </div>
+                            <div class="tag-selector-wrapper">
+                                <label class="tag-label" for="composer-tag-select">Category:</label>
+                                <select id="composer-tag-select" class="tag-select-input" onchange={handleComposerTagChange}>
+                                    <option value="General">General</option>
+                                    <option value="Prompt Share">Prompt Share</option>
+                                    <option value="Question">Question</option>
+                                    <option value="Announcement">Announcement</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="composer-body">
+                            <textarea 
+                                class="composer-textarea" 
+                                rows="3" 
+                                placeholder={composerPlaceholder}
+                                value={newPostContent} 
+                                oninput={handlePostContentChange}>
+                            </textarea>
+                        </div>
+
+                        <div class="composer-footer">
+                            <div class="composer-tip">
+                                <span>Markdown & code blocks (```) supported</span>
+                            </div>
+                            <button 
+                                class="publish-btn" 
+                                disabled={isPublishDisabled} 
+                                onclick={handlePublishPost}>
+                                <template if:true={isPublishing}>
+                                    <span class="btn-spinner"></span>
+                                    <span>Posting...</span>
+                                </template>
+                                <template if:false={isPublishing}>
+                                    <lightning-icon icon-name="utility:send" size="xx-small" class="publish-icon"></lightning-icon>
+                                    <span>{publishButtonLabel}</span>
+                                </template>
+                            </button>
+                        </div>
+                    </section>
+                </template>
+
+                <!-- FEED LIST -->
+                <section class="feed-section">
+                    <template if:true={isLoading}>
+                        <div class="feed-loader">
+                            <span class="hub-spinner"></span>
+                            <span>Loading team discussions and threads...</span>
+                        </div>
+                    </template>
+
+                    <template if:false={isLoading}>
+                        <template if:true={hasMessages}>
+                            <div class="messages-list">
+                                <template for:each={messages} for:item="msg">
+                                    <article key={msg.id} class="message-card">
+                                        <div class="message-header">
+                                            <div class="msg-author-meta">
+                                                <div class="msg-avatar-circle">
+                                                    <template if:true={msg.authorProfilePicture}>
+                                                        <img src={msg.authorProfilePicture} class="post-author-photo" alt={msg.authorName} />
+                                                    </template>
+                                                    <template if:false={msg.authorProfilePicture}>
+                                                        <lightning-icon icon-name={msg.authorAvatar} size="x-small"></lightning-icon>
+                                                    </template>
+                                                </div>
+                                                <div class="msg-author-details">
+                                                    <div class="author-title-row">
+                                                        <span class="msg-author-name">{msg.authorName}</span>
+                                                        <template if:true={msg.isAdminPost}>
+                                                            <span class="admin-post-tag">Admin</span>
+                                                        </template>
+                                                        <span class="msg-tag-pill">{msg.tag}</span>
+                                                    </div>
+                                                    <div class="msg-time-row">
+                                                        <span class="msg-time-text">{msg.timeAgo}</span>
+                                                        <span class="msg-dot-sep">&bull;</span>
+                                                        <span class="msg-email-text">{msg.authorEmail}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <template if:true={msg.canDelete}>
+                                                <button 
+                                                    class="delete-msg-btn" 
+                                                    data-id={msg.id} 
+                                                    onclick={handleDeleteMessage} 
+                                                    title="Delete post">
+                                                    <lightning-icon icon-name="utility:delete" size="xx-small"></lightning-icon>
+                                                </button>
+                                            </template>
+                                        </div>
+
+                                        <!-- QUOTATION SNIPPET IF POST IS A DIRECT REPLY -->
+                                        <template if:true={msg.replyToAuthorName}>
+                                            <div class="quoted-message-box">
+                                                <div class="quoted-bar"></div>
+                                                <div class="quoted-content">
+                                                    <span class="quoted-author">In reply to @{msg.replyToAuthorName}:</span>
+                                                    <p class="quoted-text">"{msg.replyToSnippet}"</p>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <div class="message-content">
+                                            <p class="content-text">{msg.content}</p>
+                                        </div>
+
+                                        <div class="message-footer">
+                                            <div class="footer-left-actions">
+                                                <!-- LIKE BUTTON -->
+                                                <button 
+                                                    class="like-btn" 
+                                                    data-id={msg.id} 
+                                                    onclick={handleLikeMessage} 
+                                                    title="Like this discussion">
+                                                    <lightning-icon icon-name="utility:like" size="xx-small" class="like-icon"></lightning-icon>
+                                                    <span class="likes-count">{msg.likesCount}</span>
+                                                </button>
+
+                                                <!-- REPLY & THREAD TOGGLE BUTTON -->
+                                                <button 
+                                                    class="reply-trigger-btn" 
+                                                    data-id={msg.id} 
+                                                    onclick={handleReplyToMessage} 
+                                                    title="Reply to this discussion">
+                                                    <lightning-icon icon-name="utility:reply" size="xx-small" class="reply-icon"></lightning-icon>
+                                                    <span>Reply</span>
+                                                </button>
+
+                                                <!-- VIEW THREAD REPLIES TOGGLE IF HAS REPLIES -->
+                                                <template if:true={msg.replyCount}>
+                                                    <button 
+                                                        class="thread-toggle-btn" 
+                                                        data-id={msg.id} 
+                                                        onclick={handleToggleReplies} 
+                                                        title="Toggle thread replies">
+                                                        <lightning-icon icon-name="utility:comments" size="xx-small" class="comments-icon"></lightning-icon>
+                                                        <span>{msg.replyCount} Replies</span>
+                                                        <template if:true={msg.showReplies}>
+                                                            <span class="toggle-arrow">▲</span>
+                                                        </template>
+                                                        <template if:false={msg.showReplies}>
+                                                            <span class="toggle-arrow">▼</span>
+                                                        </template>
+                                                    </button>
+                                                </template>
+                                            </div>
+
+                                            <div class="footer-right-actions">
+                                                <!-- ENCRYPTED DIRECT MESSAGE SHORTCUT -->
+                                                <button 
+                                                    class="pm-shortcut-btn" 
+                                                    data-author-id={msg.authorId}
+                                                    data-author-name={msg.authorName}
+                                                    data-author-email={msg.authorEmail}
+                                                    data-author-avatar={msg.authorAvatar}
+                                                    onclick={handleStartDirectChatWithAuthor} 
+                                                    title="Send private End-to-End Encrypted message to this author">
+                                                    <lightning-icon icon-name="utility:lock" size="xx-small" class="pm-icon"></lightning-icon>
+                                                    <span>Encrypted PM</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- NESTED THREADED REPLIES CONTAINER -->
+                                        <template if:true={msg.showReplies}>
+                                            <div class="thread-replies-container">
+                                                <div class="thread-line-indicator"></div>
+                                                <div class="thread-content-flow">
+                                                    <div class="thread-header-badge">
+                                                        <span>Discussion Thread</span>
+                                                    </div>
+
+                                                    <!-- LIST OF REPLIES -->
+                                                    <template for:each={msg.replies} for:item="reply">
+                                                        <div key={reply.id} class="thread-reply-item">
+                                                            <div class="reply-avatar-col">
+                                                                <template if:true={reply.authorProfilePicture}>
+                                                                    <img src={reply.authorProfilePicture} class="reply-photo" alt={reply.authorName} />
+                                                                </template>
+                                                                <template if:false={reply.authorProfilePicture}>
+                                                                    <lightning-icon icon-name={reply.authorAvatar} size="xx-small"></lightning-icon>
+                                                                </template>
+                                                            </div>
+                                                            <div class="reply-body-col">
+                                                                <div class="reply-meta-row">
+                                                                    <span class="reply-author-name">{reply.authorName}</span>
+                                                                    <template if:true={reply.isAdminPost}>
+                                                                        <span class="admin-pill-micro">Admin</span>
+                                                                    </template>
+                                                                    <span class="reply-time">{reply.timeAgo}</span>
+                                                                </div>
+                                                                <div class="reply-message-text">
+                                                                    {reply.content}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- INLINE THREAD COMPOSER (QUICK REPLY) -->
+                                                    <template if:false={isCommunityRestricted}>
+                                                        <div class="inline-reply-composer">
+                                                            <div class="inline-composer-avatar">
+                                                                <lightning-icon icon-name={currentUserAvatar} size="xx-small"></lightning-icon>
+                                                            </div>
+                                                            <input 
+                                                                type="text" 
+                                                                class="inline-reply-input" 
+                                                                placeholder="Write a reply in this thread..." 
+                                                                value={msg.replyDraft} 
+                                                                data-id={msg.id} 
+                                                                oninput={handleInlineReplyDraftChange} 
+                                                                onkeydown={handleInlineReplyKeyDown} />
+                                                            <button 
+                                                                class="inline-reply-send-btn" 
+                                                                data-id={msg.id} 
+                                                                onclick={handlePublishInlineReply} 
+                                                                disabled={msg.isPostingReply}>
+                                                                <lightning-icon icon-name="utility:send" size="xx-small"></lightning-icon>
+                                                            </button>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </article>
+                                </template>
+                            </div>
+                        </template>
+
+                        <template if:false={hasMessages}>
+                            <div class="empty-feed-card">
+                                <lightning-icon icon-name="standard:announcement" size="medium" class="empty-icon"></lightning-icon>
+                                <h3>No Discussions Yet in this Category</h3>
+                                <p>Be the first to share insights or ask a question to your team!</p>
+                            </div>
+                        </template>
+                    </template>
+                </section>
+            </main>
+        </template>
+
+        <!-- ==================================================== -->
+        <!-- VIEW 2: ZERO-KNOWLEDGE E2EE PERSONAL DIRECT MESSAGES -->
+        <!-- ==================================================== -->
+        <template if:true={isDirectMessagesView}>
+            <div class="dm-workspace-container">
+                <!-- LEFT CONTACTS & TEAM DIRECTORY SIDEBAR -->
+                <aside class="dm-contacts-sidebar">
+                    <div class="sidebar-search-header">
+                        <div class="sidebar-title-row">
+                            <h2>Direct Messages</h2>
+                            <span class="security-chip-pill">🔒 E2EE</span>
+                        </div>
+                        <div class="contacts-search-box">
+                            <lightning-icon icon-name="utility:search" size="xx-small" class="search-input-icon"></lightning-icon>
+                            <input 
+                                type="text" 
+                                class="contacts-search-input" 
+                                placeholder="Search teammates..." 
+                                value={partnerSearchKey} 
+                                oninput={handlePartnerSearch} />
+                        </div>
+                    </div>
+
+                    <div class="contacts-list-scroll">
+                        <template if:true={isLoadingPartners}>
+                            <div class="contacts-loader">
+                                <span class="hub-spinner"></span>
+                                <span>Loading contacts...</span>
+                            </div>
+                        </template>
+
+                        <template if:false={isLoadingPartners}>
+                            <template if:true={hasPartners}>
+                                <div class="partners-list">
+                                    <template for:each={filteredPartners} for:item="partner">
+                                        <div 
+                                            key={partner.id} 
+                                            class="partner-card-item" 
+                                            data-id={partner.id} 
+                                            onclick={handleSelectPartner}>
+                                            <div class="partner-avatar-wrapper">
+                                                <template if:true={partner.profilePictureData}>
+                                                    <img src={partner.profilePictureData} class="partner-avatar-img" alt={partner.name} />
+                                                </template>
+                                                <template if:false={partner.profilePictureData}>
+                                                    <lightning-icon icon-name={partner.avatarIcon} size="small"></lightning-icon>
+                                                </template>
+                                                <span class={partner.statusClass}></span>
+                                            </div>
+                                            <div class="partner-info-col">
+                                                <div class="partner-name-row">
+                                                    <span class="partner-name">{partner.name}</span>
+                                                    <template if:true={partner.hasE2EEKey}>
+                                                        <span class="key-verified-badge" title="ECDH Public Key Verified">🔒 Key Ready</span>
+                                                    </template>
+                                                </div>
+                                                <div class="partner-email">{partner.email}</div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <template if:false={hasPartners}>
+                                <div class="no-partners-notice">
+                                    <p>No teammates found matching your query.</p>
+                                </div>
+                            </template>
+                        </template>
+                    </div>
+                </aside>
+
+                <!-- RIGHT PRIVATE CHAT ROOM PANEL -->
+                <section class="dm-chat-panel">
+                    <!-- IF NO PARTNER SELECTED -->
+                    <template if:false={selectedPartner}>
+                        <div class="dm-welcome-state">
+                            <div class="welcome-shield-icon">
+                                <lightning-icon icon-name="utility:shield" size="large"></lightning-icon>
+                            </div>
+                            <h2>Zero-Knowledge Personal Messages</h2>
+                            <p class="welcome-lead">
+                                End-to-End Encrypted using military-grade <strong>AES-GCM (256-bit)</strong> AEAD cipher with <strong>ECDH NIST P-256</strong> key agreements.
+                            </p>
+                            <div class="security-highlights-grid">
+                                <div class="highlight-item">
+                                    <lightning-icon icon-name="utility:lock" size="x-small"></lightning-icon>
+                                    <div>
+                                        <strong>Zero Server Knowledge</strong>
+                                        <p>Salesforce database only stores encrypted ciphertext strings. Plaintext never leaves your browser.</p>
+                                    </div>
+                                </div>
+                                <div class="highlight-item">
+                                    <lightning-icon icon-name="utility:user_role" size="x-small"></lightning-icon>
+                                    <div>
+                                        <strong>Device-Bound Keypairs</strong>
+                                        <p>Decryption keys are held securely in client memory and browser local storage.</p>
+                                    </div>
+                                </div>
+                                <div class="highlight-item">
+                                    <lightning-icon icon-name="utility:identity" size="x-small"></lightning-icon>
+                                    <div>
+                                        <strong>Cryptographic Safety Numbers</strong>
+                                        <p>Verify identities out-of-band using SHA-256 safety numbers.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="welcome-cta">Select a team member from the contacts list to start a confidential chat.</p>
+                        </div>
+                    </template>
+
+                    <!-- IF PARTNER IS SELECTED -->
+                    <template if:true={selectedPartner}>
+                        <!-- ROOM HEADER -->
+                        <header class="dm-room-header">
+                            <div class="dm-header-partner-meta">
+                                <div class="room-avatar-wrapper">
+                                    <template if:true={selectedPartner.profilePictureData}>
+                                        <img src={selectedPartner.profilePictureData} class="room-avatar-img" alt={selectedPartner.name} />
+                                    </template>
+                                    <template if:false={selectedPartner.profilePictureData}>
+                                        <lightning-icon icon-name={selectedPartner.avatarIcon} size="small"></lightning-icon>
+                                    </template>
+                                </div>
+                                <div>
+                                    <div class="room-name-row">
+                                        <span class="room-partner-name">{selectedPartner.name}</span>
+                                        <span class="e2ee-active-pill">
+                                            <lightning-icon icon-name="utility:lock" size="xx-small"></lightning-icon>
+                                            <span>256-Bit E2EE</span>
+                                        </span>
+                                    </div>
+                                    <div class="room-partner-email">{selectedPartner.email}</div>
+                                </div>
+                            </div>
+
+                            <div class="dm-header-actions">
+                                <button class="verify-crypto-btn" onclick={handleOpenCryptoAudit} title="Inspect cryptographic security proof and safety number">
+                                    <lightning-icon icon-name="utility:shield" size="xx-small" class="audit-btn-icon"></lightning-icon>
+                                    <span>Verify Encryption</span>
+                                </button>
+                            </div>
+                        </header>
+
+                        <!-- MESSAGES STREAM VIEWPORT -->
+                        <div class="dm-messages-stream">
+                            <template if:true={isLoadingDms}>
+                                <div class="dm-loader-box">
+                                    <span class="hub-spinner"></span>
+                                    <span>Decrypting personal messages in browser session...</span>
+                                </div>
+                            </template>
+
+                            <template if:false={isLoadingDms}>
+                                <div class="dm-security-notice-bubble">
+                                    <lightning-icon icon-name="utility:lock" size="xx-small"></lightning-icon>
+                                    <span>Messages in this chat are end-to-end encrypted with zero server knowledge.</span>
+                                </div>
+
+                                <template if:true={hasDirectMessages}>
+                                    <template for:each={directMessages} for:item="dm">
+                                        <div key={dm.id} class={dm.bubbleClass}>
+                                            <div class="dm-bubble-content">
+                                                <p class="dm-text">{dm.decryptedContent}</p>
+                                                <div class="dm-bubble-meta">
+                                                    <span class="dm-time">{dm.timeAgo}</span>
+                                                    <span class="dm-lock-badge" title="Authenticated AES-GCM Encrypted">🔒</span>
+                                                    <template if:true={dm.canDelete}>
+                                                        <button 
+                                                            class="dm-delete-btn" 
+                                                            data-id={dm.id} 
+                                                            onclick={handleDeleteDirectMessage} 
+                                                            title="Delete message">
+                                                            ×
+                                                        </button>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+
+                                <template if:false={hasDirectMessages}>
+                                    <div class="empty-conversation-state">
+                                        <lightning-icon icon-name="utility:chat" size="medium" class="empty-chat-icon"></lightning-icon>
+                                        <h3>No Messages Yet</h3>
+                                        <p>Send a message below. It will be encrypted on your device before dispatch.</p>
+                                    </div>
+                                </template>
+                            </template>
+                        </div>
+
+                        <!-- ENCRYPTED MESSAGE COMPOSER -->
+                        <footer class="dm-composer-bar">
+                            <div class="dm-input-wrapper">
+                                <textarea 
+                                    class="dm-textarea" 
+                                    rows="2" 
+                                    placeholder="Type an end-to-end encrypted message... (Press Enter to send)"
+                                    value={dmDraft} 
+                                    oninput={handleDmDraftChange} 
+                                    onkeypress={handleDmKeyPress}>
+                                </textarea>
+                                <button 
+                                    class="dm-send-btn" 
+                                    disabled={isDmSendDisabled} 
+                                    onclick={handleSendDirectMessage} 
+                                    title="Encrypt with AES-GCM and send">
+                                    <template if:true={isSendingDm}>
+                                        <span class="btn-spinner"></span>
+                                    </template>
+                                    <template if:false={isSendingDm}>
+                                        <lightning-icon icon-name="utility:send" size="xx-small" class="send-icon"></lightning-icon>
+                                    </template>
+                                </button>
+                            </div>
+                            <div class="dm-composer-guarantee">
+                                <span class="lock-dot">🔒</span>
+                                <span>Zero-knowledge: Encrypted in browser using AES-GCM-256 before transmission.</span>
+                            </div>
+                        </footer>
+                    </template>
+                </section>
+            </div>
+        </template>
+
+        <!-- ==================================================== -->
+        <!-- CRYPTOGRAPHIC SECURITY & SAFETY NUMBER AUDIT MODAL   -->
+        <!-- ==================================================== -->
+        <template if:true={showCryptoModal}>
+            <div class="crypto-modal-backdrop" onclick={handleCloseCryptoAudit}></div>
+            <div class="crypto-modal-dialog" role="dialog" aria-modal="true">
+                <div class="crypto-modal-header">
+                    <div class="crypto-modal-title">
+                        <lightning-icon icon-name="utility:shield" size="small" class="shield-modal-icon"></lightning-icon>
+                        <div>
+                            <h3>Cryptographic Security Verification</h3>
+                            <p>End-to-End Encryption Audit with {cryptoAuditData.partnerName}</p>
+                        </div>
+                    </div>
+                    <button class="modal-close-btn" onclick={handleCloseCryptoAudit}>×</button>
+                </div>
+
+                <div class="crypto-modal-body">
+                    <div class="crypto-card-section">
+                        <h4>Mutual Safety Number</h4>
+                        <p class="crypto-section-desc">
+                            Compare this 30-digit fingerprint with your partner's screen to verify mathematically that no man-in-the-middle exists:
+                        </p>
+                        <div class="safety-number-display">
+                            <code>{cryptoAuditData.safetyNumber}</code>
+                        </div>
+                    </div>
+
+                    <div class="crypto-details-grid">
+                        <div class="spec-row">
+                            <span class="spec-label">Authenticated Cipher:</span>
+                            <span class="spec-value">{cryptoAuditData.cipher}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">Key Agreement Protocol:</span>
+                            <span class="spec-value">{cryptoAuditData.keyExchange}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">Your Device Key Fingerprint:</span>
+                            <span class="spec-value code-font">{cryptoAuditData.myFingerprint}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">Partner Key Fingerprint:</span>
+                            <span class="spec-value code-font">{cryptoAuditData.partnerFingerprint}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">Zero-Knowledge Guarantee:</span>
+                            <span class="spec-value text-success">{cryptoAuditData.zeroKnowledgeStatus}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="crypto-modal-footer">
+                    <button class="modal-done-btn" onclick={handleCloseCryptoAudit}>Close Verification</button>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>

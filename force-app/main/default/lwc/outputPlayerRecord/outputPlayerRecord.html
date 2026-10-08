@@ -1,0 +1,49 @@
+<template>
+    <lightning-card title="Crickter Detail" icon-name="standard:user">
+        <template if:true={cricketers}>
+            <template for:each={cricketers} for:item="p">
+                
+                <div key={p.Id} class="slds-p-around_medium ">
+                    <div class="slds-grid slds-wrap">
+
+                        <!-- Name -->
+                        <div class="slds-col slds-size_1-of-1">
+                            <h2 class="player-title"><b>{p.Name}</b></h2>
+                        </div>
+
+                        <!-- Country -->
+                        <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                            <span><b>Country</b>: {p.Country}</span>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                            <span>{p.Summary}</span>
+                        </div>
+
+                        <!-- ID -->
+                        <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                            <span>Record Id: {p.Id}</span>
+                        </div>
+
+                        <!-- Indian badge (like Best Seller) -->
+                        <!-- <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                            <template if:true={p.isIndian}>
+                                <span class="slds-badge slds-theme_success">Indian Player</span>
+                            </template>
+                        </div> -->
+
+                        <!-- Button (same as Buy Now) -->
+                        <div class="slds-col slds-size_1-of-1 slds-m-top_medium">
+                            <lightning-button
+                                label="View Player"
+                                variant="brand"
+                                data-id={p.Id}>
+                            </lightning-button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </template>
+        </template>
+    </lightning-card>
+</template>

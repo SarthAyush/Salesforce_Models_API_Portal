@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
+    <contactEmail>sarthak.saxena.knp@gmail.com</contactEmail>
+    <label>Org Connected App</label>
+    <oauthConfig>
+        <callbackUrl>https://sarthak-dev-astrea-dev-ed.develop.my.salesforce.com/services/authcallback/Agentforce_Org
+https://orgfarm-28a2091f48-dev-ed.develop.my.salesforce-sites.com/mumodelsarthak/apex/genAIOAuthCallback
+https://orgfarm-28a2091f48-dev-ed.develop.my.salesforce.com/apex/genAIOAuthCallback</callbackUrl>
+        <consumerKey>3MVG9dAEux2v1sLtSEM4FyBcmzGMke.RrEKCrxlOPo07CEiC2uaKXGv3N7vN.jSWSY6G1o4zjLIkddak6Axk1</consumerKey>
+        <isAdminApproved>false</isAdminApproved>
+        <isClientCredentialEnabled>false</isClientCredentialEnabled>
+        <isCodeCredentialEnabled>false</isCodeCredentialEnabled>
+        <isCodeCredentialPostOnly>false</isCodeCredentialPostOnly>
+        <isConsumerSecretOptional>false</isConsumerSecretOptional>
+        <isIntrospectAllTokens>false</isIntrospectAllTokens>
+        <isNamedUserJwtEnabled>false</isNamedUserJwtEnabled>
+        <isPkceRequired>true</isPkceRequired>
+        <isRefreshTokenRotationEnabled>false</isRefreshTokenRotationEnabled>
+        <isSecretRequiredForRefreshToken>true</isSecretRequiredForRefreshToken>
+        <isSecretRequiredForTokenExchange>false</isSecretRequiredForTokenExchange>
+        <isTokenExchangeEnabled>false</isTokenExchangeEnabled>
+        <scopes>Api</scopes>
+        <scopes>Full</scopes>
+        <scopes>RefreshToken</scopes>
+    </oauthConfig>
+    <oauthPolicy>
+        <ipRelaxation>ENFORCE</ipRelaxation>
+        <isTokenExchangeFlowEnabled>false</isTokenExchangeFlowEnabled>
+        <refreshTokenPolicy>infinite</refreshTokenPolicy>
+    </oauthPolicy>
+</ConnectedApp>

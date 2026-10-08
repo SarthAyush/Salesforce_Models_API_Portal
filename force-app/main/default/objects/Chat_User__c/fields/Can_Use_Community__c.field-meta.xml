@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Can_Use_Community__c</fullName>
+    <defaultValue>true</defaultValue>
+    <description>Controls whether the user has permission to post and interact in Community hub</description>
+    <externalId>false</externalId>
+    <label>Can Use Community</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

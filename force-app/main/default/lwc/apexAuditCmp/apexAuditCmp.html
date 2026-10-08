@@ -1,0 +1,192 @@
+<template >
+    <div class="main">
+    <lightning-card title="Apex AI Audit">
+
+        <div slot="actions" class="top-button">
+            <lightning-button 
+            label=""
+            onclick={ReloadTable}
+            variant="brand"
+            disabled={isLoading}
+            icon-name="utility:rotate">   
+            </lightning-button>
+            <lightning-button
+            label="Fetch Apex Classes"
+            onclick={handleFetchClasses}
+            variant="brand"
+            disabled={isLoading}
+            icon-name="utility:refresh">
+            </lightning-button>
+        </div>
+
+        <!--spinner
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </template>-->
+
+        <!--table-->
+
+        <template if:true={showTable}>
+            <div class="fancy-table-container datatable">
+            <template if:true={isLoading}>
+                        <!-- <span class="loader"></span> -->
+            <lightning-spinner 
+            alternative-text="Loading" 
+            size="large" class='SpinClass' variant='brand' data-text={loaderText}>
+        </lightning-spinner> 
+        </template>
+            
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout fancy-custom-table">
+                
+                <thead class="head1">
+                    <tr class="slds-line-height_reset">
+                        <th class="slds-text-title_caps" scope="col" style="width: 5%;">
+                            <div class="slds-text-align_center">
+                               <lightning-input
+                                    type="checkbox"
+                                    onchange={handleSelectAll}
+                                    checked={isAllSelected}
+                                    variant="label-hidden"
+                                    label="Select All"
+                                    ></lightning-input>                                 
+                            </div>                                
+                        </th>
+                        <th class="slds-text-title_caps" scope="col" style="width: 25%;">
+                            <div class="slds-truncate" title="Class Name">Class Name</div>
+                        </th>
+                        <th class="slds-text-title_caps" scope="col" style="width: 20%;">
+                            <div class="slds-truncate slds-text-align_center" title="Status">Status</div>
+                        </th>
+                        <th class="slds-text-title_caps" scope="col" style="width: 9%;">
+                            <div class="slds-truncate slds-text-align_center" title="Overall Score">Overall Score</div>
+                         </th>
+                         <th class="slds-text-title_caps" scope="col" style="width: 9%;">
+                            <div class="slds-truncate slds-text-align_center" title="Class Type">Class Type</div>
+                         </th>
+                        <th class="slds-text-title_caps" scope="col" style="width: 30%;">
+                            <div class="slds-truncate slds-text-align_center" title="Actions">Actions</div>
+                        </th>                        
+                    </tr>    
+                </thead>
+                <tbody>
+
+
+                    
+                     <template for:each={apexClasses} for:item="cls">
+                        <tr key={cls.Id}>
+                            <!-- Checkbox -->
+                            <td>
+                                <lightning-input type="checkbox"></lightning-input>
+                            </td>
+
+                            <!-- Class Name -->
+                            <td>
+                                <div class="slds-truncate" title={cls.Name}>{cls.Name}        
+                                      </div>
+                            </td>
+                                
+                            <!-- Status -->
+                            <td class="slds-text-align_center">{cls.Status__c}</td>
+
+                            <!-- Overall Score-->
+                            <td class="slds-text-align_center"> {cls.Overall_Score__c}  </td>
+
+                            <td class="slds-text-align_center"> {cls.Class_Type__c}  </td>
+
+
+                            
+
+                            <!-- Created Date >
+                            <td class="slds-text-align_center">
+                                <lightning-formatted-date-time
+                                        value={cls.CreatedDate}
+                                        year="numeric"
+                                        month="short"
+                                        day="2-digit"
+                                        hour="2-digit"
+                                        minute="2-digit">
+                                </lightning-formatted-date-time>
+                            </td-->
+
+                            <!-- Score>
+                            <td class="slds-text-align_center"></td-->
+
+                            <!-- ACTIONS -->
+                            <td class="slds-text-align_center">
+                                <lightning-button-group>
+
+                                    <lightning-button
+                                        label="View"
+                                        icon-name="utility:preview"
+                                        onclick={viewDetails}
+                                        data-name={cls.Name}
+                                        variant="neutral">
+                                    </lightning-button>
+
+                                    <lightning-button
+                                        label="Run Analysis"
+                                        icon-name="utility:play"
+                                        onclick={fetchclsid}
+                                        data-name={cls.Name}
+                                        variant="brand">
+                                        </lightning-button>
+                                        
+
+                                    <lightning-button
+                                        label="Delete"
+                                        icon-name="utility:delete"
+                                        variant="destructive">
+                                    </lightning-button>
+
+                                </lightning-button-group>
+                            </td>
+
+                        </tr>
+                    </template> 
+                </tbody>    
+            </table>  
+        </div>
+        </template>
+        <!--Empty State-->
+        <template if:false={hasClasses}>
+            <div class="slds-text-align_center slds-m-vertical_large">
+                <p class="slds-m-top_small">
+                    No Apex Classes found. Click "Fetch Apex Classes".
+                </p>
+            </div>
+        </template>
+        <template if:true={isModalOpen}>
+    <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+
+            <!-- HEADER -->
+            <header class="slds-modal__header">
+                <h2 class="slds-text-heading_medium">
+                    Apex Analysis - {selectedRecord.Name}
+                </h2>
+            </header>
+
+            <!-- BODY -->
+            <div class="slds-modal__content slds-p-around_medium">
+                <lightning-formatted-rich-text 
+                    value={selectedRecord.Summary__c}>
+                </lightning-formatted-rich-text>
+            </div>
+
+            <!-- FOOTER -->
+            <footer class="slds-modal__footer">
+                <lightning-button label="Close" onclick={closeModal}></lightning-button>
+            </footer>
+
+        </div>
+    </section>
+
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>
+
+    </lightning-card>
+
+
+    
+    </div>
+</template>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Is_Org_Connected__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Indicates whether user has linked an external Salesforce org for Bring Your Own Org (BYOO) AI Models API inference</description>
+    <externalId>false</externalId>
+    <label>Is Org Connected</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

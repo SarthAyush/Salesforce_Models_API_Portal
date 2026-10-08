@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RemoteSiteSetting xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Outbound callout to Connected Org 814c25ed71 for Einstein Models API</description>
+    <disableProtocolSecurity>false</disableProtocolSecurity>
+    <isActive>true</isActive>
+    <url>https://orgfarm-814c25ed71-dev-ed.develop.my.salesforce.com</url>
+</RemoteSiteSetting>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>GenAI Chat Community Hub</masterLabel>
+    <description>Collaborative discussion and prompt sharing panel for GenAI Chat users</description>
+</LightningComponentBundle>

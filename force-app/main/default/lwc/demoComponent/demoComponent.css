@@ -1,0 +1,144 @@
+.hero-container {
+    background: linear-gradient(135deg, #6b21a8 0%, #2d0a15 100%); /* Deep Maroon Gradient */
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 20px;
+    color: white;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Background subtle wavy lines effect using CSS only */
+.hero-container::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: repeating-linear-gradient(45deg, transparent, transparent 100px, rgba(255,255,255,0.02) 100px, rgba(255,255,255,0.02) 200px);
+    top: -50%;
+    left: -50%;
+    z-index: 1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 900px;
+}
+
+.top-icon {
+    margin-bottom: 20px;
+}
+
+.hero-title {
+    font-size: 42px;
+    font-weight: 300;
+    margin-bottom: 10px;
+}
+
+
+.hero-description {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.sub-description {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-bottom: 50px;
+}
+
+/* Circles Layout */
+.circles-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 50px;
+}
+
+.feature-circle {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08); /* Glass effect */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    font-size: 11px;
+    line-height: 1.4;
+    transition: all 0.3s ease;
+}
+
+.feature-circle:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+/* Main Button */
+.boost-btn {
+    background-color: white;
+    color: #4c0b1b;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    transition: transform 0.2s;
+}
+
+.boost-btn:hover {
+    transform: scale(1.05);
+}
+.hero-desc {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #f3f3f3;
+    max-width: 600px;
+    margin: 12px auto 20px auto;
+    text-align: center;
+    opacity: 0.9;
+}
+
+/* Optional: better readability on larger screens */
+@media (min-width: 768px) {
+    .hero-desc {
+        font-size: 17px;
+        line-height: 1.7;
+    }
+}
+
+.by-section {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+}
+
+.by-text {
+    font-size: 14px;
+    color: #dcdcdc;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 6px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    text-align: center;
+    backdrop-filter: blur(6px);
+    transition: all 0.3s ease;
+}
+
+/* Slight hover effect so it feels alive */
+.by-text:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Profile_Picture_Data__c</fullName>
+    <description>Base64 image data URL of user uploaded profile picture</description>
+    <externalId>false</externalId>
+    <label>Profile Picture Data</label>
+    <length>131072</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

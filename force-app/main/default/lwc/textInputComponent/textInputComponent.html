@@ -1,0 +1,15 @@
+<template>
+    <lightning-card>
+        <div class="slds-p-horizontal_medium maincard">
+            <lightning-input
+                label="Enter Player Name"
+                name="Name"
+                value={playerName}
+                type="text"
+                placeholder="Player Name"
+                onchange={handleInputChange}
+                readonly={readOnly}>
+            </lightning-input>
+        </div>
+    </lightning-card>
+</template>

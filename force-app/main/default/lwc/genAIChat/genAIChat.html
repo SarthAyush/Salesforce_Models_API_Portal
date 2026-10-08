@@ -1,0 +1,1296 @@
+<template>
+    <div class={rootClass}>
+        <!-- SESSION VERIFICATION SKELETON LOADER -->
+        <template if:true={isAuthLoading}>
+            <div class="auth-skeleton-state">
+                <div class="auth-skeleton-card">
+                    <div class="auth-skeleton-orb sk-shimmer"></div>
+                    <div class="auth-skeleton-title sk-shimmer"></div>
+                    <div class="auth-skeleton-subtitle sk-shimmer"></div>
+                    <div class="auth-skeleton-input sk-shimmer"></div>
+                    <div class="auth-skeleton-input sk-shimmer"></div>
+                    <div class="auth-skeleton-btn sk-shimmer"></div>
+                    <div class="auth-skeleton-status">
+                        <span class="sk-pulse-dot"></span>
+                        <span>Verifying session security...</span>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- UNAUTHENTICATED GUEST / SIGN-IN VIEW -->
+        <template if:false={isAuthLoading}>
+            <template if:false={isAuthenticated}>
+                <div class="auth-screen-wrapper">
+                    <!-- Floating Theme Palette Switcher on Auth Screen -->
+                    <div class="auth-floating-theme-bar">
+                        <button 
+                            class="icon-btn theme-palette-btn auth-theme-toggle-btn" 
+                            title={themeButtonTitle} 
+                            onclick={toggleThemePalette}>
+                            <lightning-icon icon-name="utility:palette" size="x-small" class="theme-icon-btn"></lightning-icon>
+                            <span class="theme-current-dot" style={activeThemeDotStyle}></span>
+                        </button>
+                    </div>
+
+                    <template if:true={isLoginView}>
+                        <c-gen-a-i-chat-login 
+                            theme={selectedTheme}
+                            onlogin={handleUserLoggedIn} 
+                            onswitchtosignup={handleSwitchToSignup}>
+                        </c-gen-a-i-chat-login>
+                    </template>
+                    <template if:false={isLoginView}>
+                        <c-gen-a-i-chat-signup 
+                            theme={selectedTheme}
+                            onsignup={handleUserSignedUp} 
+                            onswitchtologin={handleSwitchToLogin}>
+                        </c-gen-a-i-chat-signup>
+                    </template>
+                </div>
+            </template>
+
+            <!-- AUTHENTICATED CHATBOT APPLICATION -->
+            <template if:true={isAuthenticated}>
+                <!-- Dedicated Admin Analytics Dashboard View -->
+                <template if:true={isAdminView}>
+                    <c-gen-a-i-chat-admin 
+                        theme={selectedTheme}
+                        session-token={sessionToken} 
+                        onswitchtochat={handleSwitchToChat} 
+                        onlogout={handleLogout}>
+                    </c-gen-a-i-chat-admin>
+                </template>
+
+                <!-- Dedicated Team Community Hub View -->
+                <template if:true={isCommunityView}>
+                    <c-gen-a-i-chat-community 
+                        theme={selectedTheme}
+                        session-token={sessionToken} 
+                        current-user={currentUser} 
+                        initial-tab={communitySubTab}
+                        onswitchtochat={handleSwitchToChat}>
+                    </c-gen-a-i-chat-community>
+                </template>
+
+                <!-- Regular AI Chat Assistant Workspace -->
+                <template if:true={isChatView}>
+                    <!-- TOP TOOLBAR (Formalized Enterprise AI Header) -->
+                    <header class="genai-toolbar">
+                        <!-- PRIMARY HEADER ROW (Navigation, Session Title & Utility Actions) -->
+                        <div class="toolbar-main-bar">
+                <div class="toolbar-nav-group">
+                    <!-- History Drawer Toggle -->
+                    <button 
+                        class="action-pill-btn history-toggle-btn" 
+                        title="View Saved Conversations" 
+                        onclick={toggleHistoryDrawer}>
+                        <lightning-icon icon-name="utility:history" size="x-small" class="pill-icon"></lightning-icon>
+                        <span class="btn-text">History</span>
+                        <template if:true={sessionCountBadge}>
+                            <span class="count-badge">{sessionCountBadge}</span>
+                        </template>
+                    </button>
+
+                    <!-- New Chat Button -->
+                    <button 
+                        class="action-pill-btn new-chat-pill-btn" 
+                        title="Start Fresh Conversation" 
+                        onclick={handleNewChat}>
+                        <lightning-icon icon-name="utility:add" size="x-small" class="pill-icon brand-icon"></lightning-icon>
+                        <span class="btn-text highlight">New Chat</span>
+                    </button>
+
+                    <!-- Team Community Hub Button -->
+                    <button 
+                        class="action-pill-btn community-nav-btn" 
+                        title="Collaborative Team Community Hub" 
+                        onclick={handleSwitchToCommunity}>
+                        <lightning-icon icon-name="standard:collaboration" size="x-small" class="pill-icon"></lightning-icon>
+                        <span class="btn-text">Community Hub</span>
+                    </button>
+
+                    <!-- End-to-End Encrypted Private Messages Button -->
+                    <button 
+                        class="action-pill-btn encrypted-pms-btn" 
+                        title="End-to-End Encrypted Private Messages" 
+                        onclick={handleSwitchToDirectMessages}>
+                        <lightning-icon icon-name="utility:lock" size="x-small" class="pill-icon lock-icon"></lightning-icon>
+                        <span class="btn-text">Private PMs</span>
+                    </button>
+
+                    <!-- EDITABLE CURRENT CHAT TITLE -->
+                    <div class="current-chat-title-wrapper" title="Click to rename current chat">
+                        <template if:true={isEditingCurrentTitle}>
+                            <div class="inline-title-edit-group">
+                                <input 
+                                    type="text" 
+                                    class="inline-title-input" 
+                                    value={currentTitleDraft} 
+                                    oninput={handleCurrentTitleDraftChange}
+                                    onkeydown={handleCurrentTitleKeyDown} />
+                                <button class="inline-title-btn save" onclick={saveCurrentTitle} title="Save title">
+                                    <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                                </button>
+                                <button class="inline-title-btn cancel" onclick={cancelEditCurrentTitle} title="Cancel">
+                                    <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                                </button>
+                            </div>
+                        </template>
+                        <template if:false={isEditingCurrentTitle}>
+                            <div class="chat-title-display-group">
+                                <span class="active-chat-title-text" onclick={startEditCurrentTitle}>{displayChatTitle}</span>
+                                <button class="icon-btn edit-title-btn" onclick={startEditCurrentTitle} title="Rename current chat">
+                                    <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="toolbar-actions-group">
+                    <!-- Multi-Colour Theme Palette Selector -->
+                    <div class="theme-selector-container">
+                        <button 
+                            class="icon-btn theme-palette-btn" 
+                            title={themeButtonTitle} 
+                            onclick={toggleThemePalette}>
+                            <lightning-icon icon-name="utility:palette" size="x-small" class="theme-icon-btn"></lightning-icon>
+                            <span class="theme-current-dot" style={activeThemeDotStyle}></span>
+                        </button>
+                    </div>
+
+                    <!-- User Profile & Account Action Dropdown -->
+                    <div class="user-menu-container">
+                        <button 
+                            class="user-profile-badge-btn" 
+                            title={currentUserDisplayName} 
+                            onclick={toggleProfileDropdown}>
+                            <div class="user-avatar-badge">
+                                <template if:true={currentUserProfilePicture}>
+                                    <img src={currentUserProfilePicture} class="user-avatar-photo" alt={currentUserDisplayName} />
+                                </template>
+                                <template if:false={currentUserProfilePicture}>
+                                    <lightning-icon icon-name={currentUserAvatarIcon} size="xx-small" variant="inverse"></lightning-icon>
+                                </template>
+                            </div>
+                            <span class="user-badge-name">{currentUserDisplayName}</span>
+                            <lightning-icon icon-name="utility:chevrondown" size="xx-small" class="user-chevron"></lightning-icon>
+                        </button>
+
+                        <template if:true={isProfileDropdownOpen}>
+                            <div class="profile-dropdown-panel" onclick={handleStopPropagation}>
+                                <div class="profile-summary-header">
+                                    <div class="profile-avatar-circle">
+                                        <template if:true={currentUserProfilePicture}>
+                                            <img src={currentUserProfilePicture} class="profile-avatar-photo" alt={currentUserDisplayName} />
+                                        </template>
+                                        <template if:false={currentUserProfilePicture}>
+                                            <lightning-icon icon-name={currentUserAvatarIcon} size="small" variant="inverse"></lightning-icon>
+                                        </template>
+                                    </div>
+                                    <div class="profile-info-text">
+                                        <span class="profile-user-name">{currentUserDisplayName}</span>
+                                        <span class="profile-user-email">{currentUserEmail}</span>
+                                        <template if:true={currentUserBio}>
+                                            <span class="profile-user-bio">{currentUserBio}</span>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="profile-menu-divider"></div>
+                                <template if:true={currentUserIsAdmin}>
+                                    <button class="profile-action-item admin-highlight-item" onclick={handleSwitchToAdmin}>
+                                        <lightning-icon icon-name="standard:portal" size="xx-small"></lightning-icon>
+                                        <span>System Analytics</span>
+                                    </button>
+                                </template>
+                                <button class="profile-action-item" onclick={handleSwitchToCommunity}>
+                                    <lightning-icon icon-name="standard:collaboration" size="xx-small"></lightning-icon>
+                                    <span>Team Community Hub</span>
+                                </button>
+                                <button class="profile-action-item" onclick={openEditProfileModal}>
+                                    <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
+                                    <span>Customize Profile</span>
+                                </button>
+                                <button class="profile-action-item" onclick={openChangePasswordModal}>
+                                    <lightning-icon icon-name="utility:password" size="xx-small"></lightning-icon>
+                                    <span>Reset Password</span>
+                                </button>
+                                <button class="profile-action-item org-menu-item" onclick={toggleOrgModal}>
+                                    <lightning-icon icon-name="utility:connected_apps" size="xx-small"></lightning-icon>
+                                    <span>{connectedOrgMenuLabel}</span>
+                                </button>
+                                <div class="profile-menu-divider"></div>
+                                <button class="profile-action-item danger-item" onclick={handleLogout}>
+                                    <lightning-icon icon-name="utility:logout" size="xx-small"></lightning-icon>
+                                    <span>Sign Out</span>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Export Chat Action -->
+                    <button 
+                        class="icon-btn" 
+                        title="Export Chat Transcript (.txt)" 
+                        onclick={handleExportChat}>
+                        <lightning-icon icon-name="utility:download" size="x-small"></lightning-icon>
+                    </button>
+
+                    <!-- Clear Active Conversation Action -->
+                    <button 
+                        class="icon-btn danger-hover" 
+                        title="Clear Current Screen" 
+                        onclick={handleClearCurrentChat}>
+                        <lightning-icon icon-name="utility:delete" size="x-small"></lightning-icon>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CHIPS ROW (Model, Persona, Live Limits, Data Lens, Temporary Chat) -->
+            <div class="toolbar-chips-bar">
+                <!-- AI Model Selector -->
+                <div class="model-picker-container" title="Select AI Engine">
+                    <div class="model-icon-badge">
+                        <lightning-icon icon-name="utility:einstein" size="xx-small" class="model-slds-icon"></lightning-icon>
+                    </div>
+                    <select class="model-select" onchange={handleModelChange}>
+                        <template for:each={formattedModelOptions} for:item="opt">
+                            <option key={opt.value} value={opt.value} selected={opt.isSelected}>
+                                {opt.label}
+                            </option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Persona Selector -->
+                <div class="persona-picker-container" title="Select AI Persona">
+                    <lightning-icon icon-name={currentPersonaIconName} size="x-small" class="persona-slds-icon"></lightning-icon>
+                    <select class="persona-select" onchange={handlePersonaChange}>
+                        <option value="general" selected={isPersonaGeneral}>All-Around Intelligence</option>
+                        <option value="sales" selected={isPersonaSales}>Sales Strategist</option>
+                        <option value="service" selected={isPersonaService}>Support Lead</option>
+                        <option value="admin" selected={isPersonaAdmin}>Admin & Architect</option>
+                    </select>
+                </div>
+
+                <!-- Live Model API Consumption & Limit Button -->
+                <button 
+                    class={quotaBtnClass} 
+                    title="Model API & Org Consumption Limit" 
+                    onclick={toggleQuotaModal}>
+                    <lightning-icon icon-name="utility:gauge" size="x-small" class="pill-icon quota-icon"></lightning-icon>
+                    <span class="btn-text">{quotaButtonLabel}</span>
+                </button>
+
+                <!-- Temporary Chat (Incognito) Mode Toggle Button -->
+                <button 
+                    class={temporaryChatBtnClass} 
+                    title={temporaryChatBtnTitle} 
+                    onclick={toggleTemporaryChat}>
+                    <lightning-icon icon-name="utility:shield" size="x-small" class={temporaryChatIconClass}></lightning-icon>
+                    <span class="btn-text">{temporaryChatLabel}</span>
+                </button>
+
+                <!-- Bring-Your-Own-Org (BYOO) OAuth Connection Button -->
+                <button 
+                    class={connectedOrgBtnClass} 
+                    title={connectedOrgBtnTitle} 
+                    onclick={toggleOrgModal}>
+                    <lightning-icon icon-name={connectedOrgIconName} size="x-small" class={connectedOrgIconClass}></lightning-icon>
+                    <span class="btn-text">{connectedOrgBtnLabel}</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- TEMPORARY CHAT ACTIVE STATUS STRIP -->
+        <template if:true={isTemporaryChat}>
+            <div class="temporary-chat-indicator">
+                <lightning-icon icon-name="utility:shield" size="xx-small" class="temp-indicator-icon"></lightning-icon>
+                <span class="temp-indicator-text">Temporary Chat Mode &bull; Messages are ephemeral and not saved to conversation history</span>
+            </div>
+        </template>
+
+        <!-- MAIN CONTAINER -->
+        <div class="chat-viewport">
+            <!-- CHAT HISTORY DRAWER / SIDEBAR -->
+            <template if:true={isHistoryOpen}>
+                <div class="history-backdrop" onclick={toggleHistoryDrawer}></div>
+                <aside class="history-drawer">
+                    <div class="drawer-header">
+                        <div class="drawer-title-group">
+                            <lightning-icon icon-name="utility:clock" size="x-small" class="drawer-title-icon"></lightning-icon>
+                            <span class="drawer-heading">Saved Chats</span>
+                        </div>
+                        <div class="drawer-header-actions">
+                            <template if:true={hasSessions}>
+                                <button class="text-action-btn danger-text" onclick={handleClearAllSessions} title="Delete all history">Clear All</button>
+                            </template>
+                            <button class="icon-btn close-btn" onclick={toggleHistoryDrawer} title="Close History">
+                                <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search saved chats -->
+                    <div class="drawer-search-box">
+                        <lightning-icon icon-name="utility:search" size="xx-small" class="search-icon"></lightning-icon>
+                        <input 
+                            type="text" 
+                            class="drawer-search-input" 
+                            placeholder="Search conversation history..."
+                            value={historySearchTerm}
+                            oninput={handleSearchHistory}/>
+                        <template if:true={historySearchTerm}>
+                            <button class="search-clear-btn" onclick={handleClearSearch}>
+                                <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                            </button>
+                        </template>
+                    </div>
+
+                    <!-- Session List -->
+                    <div class="drawer-sessions-list">
+                        <template if:true={loadingSessions}>
+                            <div class="drawer-loading">
+                                <lightning-spinner alternative-text="Loading history" size="small"></lightning-spinner>
+                            </div>
+                        </template>
+
+                        <template if:false={loadingSessions}>
+                            <template for:each={filteredSessions} for:item="sess">
+                                <div 
+                                    key={sess.id} 
+                                    class={sess.cardClass}
+                                    data-id={sess.id}
+                                    onclick={handleSelectSession}>
+                                    <div class="session-item-content">
+                                        <!-- Inline Session Title Edit Form -->
+                                        <template if:true={sess.isEditing}>
+                                            <div class="session-inline-edit" onclick={handleStopPropagation}>
+                                                <input 
+                                                    type="text" 
+                                                    class="session-edit-input" 
+                                                    value={sess.editTitleDraft} 
+                                                    data-id={sess.id}
+                                                    oninput={handleSessionTitleDraftChange}
+                                                    onkeydown={handleSessionTitleKeyDown} />
+                                                <div class="session-edit-actions">
+                                                    <button class="session-edit-btn save" data-id={sess.id} onclick={handleSaveSessionTitle} title="Save title">
+                                                        <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                                                    </button>
+                                                    <button class="session-edit-btn cancel" data-id={sess.id} onclick={handleCancelSessionEdit} title="Cancel">
+                                                        <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Normal Session Display -->
+                                        <template if:false={sess.isEditing}>
+                                            <div class="session-item-top">
+                                                <span class="session-title" title={sess.title}>{sess.title}</span>
+                                                <div class="session-actions-group">
+                                                    <button 
+                                                        class="session-action-btn edit-btn" 
+                                                        data-id={sess.id} 
+                                                        title="Rename chat"
+                                                        onclick={handleStartEditSession}>
+                                                        <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
+                                                    </button>
+                                                    <button 
+                                                        class="session-action-btn delete-btn" 
+                                                        data-id={sess.id} 
+                                                        title="Delete this session"
+                                                        onclick={handleDeleteSession}>
+                                                        <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="session-item-snippet">{sess.lastPreview}</div>
+                                            <div class="session-item-meta">
+                                                <span class="session-date">{sess.formattedDate}</span>
+                                                <span class="session-badge">{sess.messageCount} msgs</span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template if:true={isHistoryEmpty}>
+                                <div class="drawer-empty-state">
+                                    <lightning-icon icon-name="utility:chat" size="medium" class="empty-icon-slds"></lightning-icon>
+                                    <p class="empty-title">No conversations saved yet</p>
+                                    <p class="empty-sub">Your chat sessions will automatically appear here.</p>
+                                </div>
+                            </template>
+                        </template>
+                    </div>
+                </aside>
+            </template>
+
+            <!-- MODEL API CONSUMPTION & ORG LIMITS MODAL -->
+            <template if:true={isQuotaModalOpen}>
+                <div class="history-backdrop" onclick={toggleQuotaModal}></div>
+                <div class="quota-modal-panel">
+                    <div class="quota-modal-header">
+                        <div class="quota-modal-title">
+                            <span class={quotaStatusBadgeClass}>{quotaStatusBadgeText}</span>
+                            <h3>Model API & Org Consumption Limit</h3>
+                            <p>Live capacity overview for Salesforce Generative Models and API requests.</p>
+                        </div>
+                        <button class="icon-btn close-btn" onclick={toggleQuotaModal}>
+                            <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                        </button>
+                    </div>
+
+                    <div class="quota-stats-grid">
+                        <div class="quota-stat-card">
+                            <span class="stat-num">{apiUsageRemainingFormatted}</span>
+                            <span class="stat-lbl">Daily API Requests Remaining</span>
+                            <div class="quota-progress-track">
+                                <div class="quota-progress-fill" style={apiUsageProgressStyle}></div>
+                            </div>
+                            <span class="stat-sub">{apiUsageUsedFormatted} / {apiUsageMaxFormatted} consumed ({apiPercentRemainingFormatted}% capacity available)</span>
+                        </div>
+
+                        <div class="quota-stat-card">
+                            <span class="stat-num">{aiMonthlyRemainingFormatted}</span>
+                            <span class="stat-lbl">AI Inference Monthly Limit</span>
+                            <span class="stat-sub">Monthly tokens available across Agentforce & ModelsAPI</span>
+                        </div>
+                    </div>
+
+                    <div class="quota-modal-footer">
+                        <span class="quota-model-active">Active Model: <strong>{currentModelLabel}</strong></span>
+                        <button class="action-pill-btn refresh-quota-btn" onclick={fetchApiConsumption} title="Refresh limits">
+                            <lightning-icon icon-name="utility:refresh" size="xx-small"></lightning-icon>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                </div>
+            </template>
+
+
+            <!-- CUSTOMIZE USER PROFILE MODAL -->
+            <template if:true={isEditProfileModalOpen}>
+                <div class="history-backdrop" onclick={closeEditProfileModal}></div>
+                <div class="custom-user-modal-panel" onclick={handleStopPropagation}>
+                    <div class="custom-modal-header">
+                        <div class="modal-hdr-title">
+                            <h3>Customize Profile</h3>
+                            <p>Update your personal display name, role bio, and interface avatar.</p>
+                        </div>
+                        <button class="icon-btn close-btn" onclick={closeEditProfileModal} title="Close">
+                            <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                        </button>
+                    </div>
+
+                    <template if:true={profileEditError}>
+                        <div class="modal-status-alert error-alert">{profileEditError}</div>
+                    </template>
+                    <template if:true={profileEditSuccess}>
+                        <div class="modal-status-alert success-alert">{profileEditSuccess}</div>
+                    </template>
+
+                    <form onsubmit={handleSaveProfile} class="custom-modal-form">
+                        <!-- Profile Photo Upload -->
+                        <div class="modal-form-group">
+                            <label class="modal-form-label">Profile Photo</label>
+                            <div class="profile-photo-upload-row">
+                                <div class="profile-photo-circle">
+                                    <template if:true={editProfilePictureData}>
+                                        <img src={editProfilePictureData} class="profile-photo-preview-img" alt="Profile Preview" />
+                                    </template>
+                                    <template if:false={editProfilePictureData}>
+                                        <lightning-icon icon-name={editProfileAvatar} size="medium" variant="inverse"></lightning-icon>
+                                    </template>
+                                </div>
+                                <div class="profile-photo-controls">
+                                    <input 
+                                        type="file" 
+                                        class="profile-file-input" 
+                                        accept="image/png,image/jpeg,image/jpg,image/webp" 
+                                        onchange={handleProfilePhotoUpload} 
+                                        style="display:none;" />
+                                    <button 
+                                        type="button" 
+                                        class="action-pill-btn upload-photo-btn" 
+                                        onclick={triggerPhotoFileInput}>
+                                        <lightning-icon icon-name="utility:upload" size="xx-small"></lightning-icon>
+                                        <span>Upload Photo</span>
+                                    </button>
+                                    <template if:true={editProfilePictureData}>
+                                        <button 
+                                            type="button" 
+                                            class="link-danger-btn" 
+                                            onclick={handleRemoveProfilePhoto}>
+                                            Remove
+                                        </button>
+                                    </template>
+                                    <span class="photo-hint-text">JPG, PNG or WEBP. Saves directly to your profile.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-form-group">
+                            <label class="modal-form-label" for="edit-profile-name">Display Name</label>
+                            <input 
+                                id="edit-profile-name"
+                                type="text" 
+                                class="modal-form-input" 
+                                value={editProfileName} 
+                                oninput={handleEditProfileNameChange} 
+                                required />
+                        </div>
+
+                        <div class="modal-form-group">
+                            <label class="modal-form-label" for="edit-profile-bio">Bio / Role</label>
+                            <input 
+                                id="edit-profile-bio"
+                                type="text" 
+                                class="modal-form-input" 
+                                value={editProfileBio} 
+                                oninput={handleEditProfileBioChange} 
+                                placeholder="e.g. Lead Enterprise Architect" 
+                                maxlength="200" />
+                        </div>
+
+                        <div class="modal-form-group">
+                            <label class="modal-form-label">Avatar Icon</label>
+                            <div class="modal-avatar-selection-grid">
+                                <template for:each={avatarModalOptions} for:item="opt">
+                                    <button 
+                                        key={opt.name} 
+                                        type="button" 
+                                        class={opt.cssClass} 
+                                        data-avatar={opt.name} 
+                                        onclick={handleSelectProfileAvatar} 
+                                        title={opt.label}>
+                                        <lightning-icon icon-name={opt.name} size="small" variant="inverse"></lightning-icon>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="custom-modal-actions">
+                            <button type="button" class="modal-btn-cancel" onclick={closeEditProfileModal}>Cancel</button>
+                            <button type="submit" class="modal-btn-submit" disabled={isSavingProfile}>
+                                <template if:true={isSavingProfile}>Saving...</template>
+                                <template if:false={isSavingProfile}>Save Changes</template>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </template>
+
+            <!-- CHANGE / RESET PASSWORD MODAL -->
+            <template if:true={isChangePasswordModalOpen}>
+                <div class="history-backdrop" onclick={closeChangePasswordModal}></div>
+                <div class="custom-user-modal-panel" onclick={handleStopPropagation}>
+                    <div class="custom-modal-header">
+                        <div class="modal-hdr-title">
+                            <h3>Reset Password</h3>
+                            <p>Verify your existing password and choose a new secure password.</p>
+                        </div>
+                        <button class="icon-btn close-btn" onclick={closeChangePasswordModal} title="Close">
+                            <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                        </button>
+                    </div>
+
+                    <template if:true={changePasswordError}>
+                        <div class="modal-status-alert error-alert">{changePasswordError}</div>
+                    </template>
+                    <template if:true={changePasswordSuccess}>
+                        <div class="modal-status-alert success-alert">{changePasswordSuccess}</div>
+                    </template>
+
+                    <form onsubmit={handleSaveChangePassword} class="custom-modal-form">
+                        <div class="modal-form-group">
+                            <label class="modal-form-label" for="current-pwd">Current Password</label>
+                            <input 
+                                id="current-pwd"
+                                type="password" 
+                                class="modal-form-input" 
+                                value={currentPassword} 
+                                oninput={handleCurrentPasswordChange} 
+                                required />
+                        </div>
+
+                        <div class="modal-form-group">
+                            <label class="modal-form-label" for="new-pwd">New Password</label>
+                            <input 
+                                id="new-pwd"
+                                type="password" 
+                                class="modal-form-input" 
+                                value={newPasswordInput} 
+                                oninput={handleNewPasswordInputChange} 
+                                placeholder="Min 6 characters"
+                                required />
+                        </div>
+
+                        <div class="modal-form-group">
+                            <label class="modal-form-label" for="confirm-pwd">Confirm New Password</label>
+                            <input 
+                                id="confirm-pwd"
+                                type="password" 
+                                class="modal-form-input" 
+                                value={confirmNewPasswordInput} 
+                                oninput={handleConfirmNewPasswordInputChange} 
+                                placeholder="Re-enter new password"
+                                required />
+                        </div>
+
+                        <div class="custom-modal-actions">
+                            <button type="button" class="modal-btn-cancel" onclick={closeChangePasswordModal}>Cancel</button>
+                            <button type="submit" class="modal-btn-submit" disabled={isSavingPassword}>
+                                <template if:true={isSavingPassword}>Updating...</template>
+                                <template if:false={isSavingPassword}>Update Password</template>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </template>
+
+            <!-- CONNECT SALESFORCE ORG (BRING-YOUR-OWN-ORG FULL OAUTH 2.0 POPUP FLOW) MODAL -->
+            <template if:true={isOrgModalOpen}>
+                <div class="history-backdrop" onclick={toggleOrgModal}></div>
+                <div class="custom-user-modal-panel org-connect-modal-panel" onclick={handleStopPropagation}>
+                    <div class="custom-modal-header">
+                        <div class="modal-hdr-title">
+                            <div class="org-modal-title-row">
+                                <lightning-icon icon-name="utility:connected_apps" size="small" class="org-title-icon"></lightning-icon>
+                                <div>
+                                    <h3>Salesforce Org Connection</h3>
+                                    <p>Bring your own Salesforce Org to run chats using your Org's Einstein Models API.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="icon-btn close-btn" onclick={toggleOrgModal} title="Close">
+                            <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                        </button>
+                    </div>
+
+                    <template if:true={orgModalError}>
+                        <div class="modal-status-alert error-alert">{orgModalError}</div>
+                    </template>
+                    <template if:true={orgModalSuccess}>
+                        <div class="modal-status-alert success-alert">{orgModalSuccess}</div>
+                    </template>
+
+                    <!-- ALREADY CONNECTED STATE -->
+                    <template if:true={isUserOrgConnected}>
+                        <div class="org-connected-status-card">
+                            <div class="org-card-header">
+                                <span class="live-status-pill online">
+                                    <span class="live-status-dot"></span> Active &amp; Connected
+                                </span>
+                                <span class="org-env-pill">{connectedOrgType}</span>
+                            </div>
+
+                            <div class="org-details-grid">
+                                <div class="org-detail-cell">
+                                    <span class="org-cell-label">Instance URL</span>
+                                    <span class="org-cell-value link-text" title={connectedOrgInstanceUrl}>{connectedOrgInstanceUrl}</span>
+                                </div>
+                                <div class="org-detail-cell">
+                                    <span class="org-cell-label">Connected Username</span>
+                                    <span class="org-cell-value">{connectedOrgUsername}</span>
+                                </div>
+                                <div class="org-detail-cell">
+                                    <span class="org-cell-label">Connected Since</span>
+                                    <span class="org-cell-value">{connectedOrgDateFormatted}</span>
+                                </div>
+                                <div class="org-detail-cell">
+                                    <span class="org-cell-label">AI Model Routing</span>
+                                    <span class="org-cell-value badge-routed">Org Einstein Models API</span>
+                                </div>
+                            </div>
+
+                            <div class="org-notice-box">
+                                <lightning-icon icon-name="utility:info" size="xx-small" class="notice-icon"></lightning-icon>
+                                <span>All your queries in this workspace will now execute callouts directly against <strong>{connectedOrgInstanceUrl}</strong> using your org's Einstein Generative Model API quota.</span>
+                            </div>
+
+                            <template if:true={testConnectionResult}>
+                                <div class="connection-test-result-box">
+                                    <code>{testConnectionResult}</code>
+                                </div>
+                            </template>
+
+                            <div class="custom-modal-actions org-connected-actions">
+                                <button type="button" class="action-pill-btn test-conn-btn" onclick={handleTestConnection} disabled={isTestingConnection}>
+                                    <lightning-icon icon-name="utility:connected_apps" size="xx-small"></lightning-icon>
+                                    <span>{testConnectionButtonLabel}</span>
+                                </button>
+                                <button type="button" class="action-pill-btn disconnect-org-btn" onclick={handleDisconnectOrg} disabled={isDisconnectingOrg}>
+                                    <lightning-icon icon-name="utility:logout" size="xx-small"></lightning-icon>
+                                    <span>Disconnect Org</span>
+                                </button>
+                                <button type="button" class="modal-btn-cancel" onclick={toggleOrgModal}>Close</button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- NOT CONNECTED STATE (FULL OAUTH 2.0 FLOW) -->
+                    <template if:false={isUserOrgConnected}>
+                        <div class="org-connect-setup-container">
+                            <!-- Connection Method Switcher Tabs -->
+                            <div class="auth-method-tabs-bar">
+                                <button type="button" class={clientCredsTabClass} data-method="client_credentials" onclick={handleSelectAuthMethod}>
+                                    <lightning-icon icon-name="utility:key" size="xx-small"></lightning-icon>
+                                    <span>Client Credentials (ECA)</span>
+                                </button>
+                                <button type="button" class={popupFlowTabClass} data-method="popup_flow" onclick={handleSelectAuthMethod}>
+                                    <lightning-icon icon-name="utility:open" size="xx-small"></lightning-icon>
+                                    <span>OAuth 2.0 Popup Flow</span>
+                                </button>
+                                <button type="button" class={manualTabClass} data-method="manual_token" onclick={handleSelectAuthMethod}>
+                                    <lightning-icon icon-name="utility:password" size="xx-small"></lightning-icon>
+                                    <span>Manual Token</span>
+                                </button>
+                            </div>
+
+                            <!-- 1. CLIENT CREDENTIALS FLOW (RECOMMENDED & PERMANENT) -->
+                            <template if:true={isAuthMethodClientCredentials}>
+                                <div class="setup-intro-banner">
+                                    <div class="banner-icon-col">
+                                        <lightning-icon icon-name="utility:shield" size="medium" class="banner-icon"></lightning-icon>
+                                    </div>
+                                    <div class="banner-text-col">
+                                        <h4>External Client App (Client Credentials Flow)</h4>
+                                        <p>Direct machine-to-machine authentication with Org 2. Generates JWT access tokens with automatic background renewal and zero session expirations.</p>
+                                    </div>
+                                </div>
+
+                                <div class="modal-form-group">
+                                    <label class="modal-form-label" for="eca-instance-url">Org 2 My Domain URL *</label>
+                                    <input 
+                                        id="eca-instance-url"
+                                        type="url" 
+                                        class="modal-form-input" 
+                                        placeholder="https://yourcompany.develop.my.salesforce.com"
+                                        value={ecaInstanceUrl} 
+                                        oninput={handleEcaInstanceUrlChange} />
+                                    <span class="field-subtext">The My Domain URL of Org 2 where your External Client App is configured.</span>
+                                </div>
+
+                                <div class="modal-form-group">
+                                    <label class="modal-form-label" for="eca-client-id">Consumer Key (Client ID) *</label>
+                                    <input 
+                                        id="eca-client-id"
+                                        type="text" 
+                                        class="modal-form-input code-font" 
+                                        placeholder="Enter Consumer Key from External Client App"
+                                        value={ecaClientId} 
+                                        oninput={handleEcaClientIdChange} />
+                                    <span class="field-subtext">Found in Org 2 Setup -> External Client App Manager -> Settings -> Consumer Key and Secret.</span>
+                                </div>
+
+                                <div class="modal-form-group">
+                                    <label class="modal-form-label" for="eca-client-secret">Consumer Secret *</label>
+                                    <input 
+                                        id="eca-client-secret"
+                                        type="password" 
+                                        class="modal-form-input code-font" 
+                                        placeholder="Enter Consumer Secret"
+                                        value={ecaClientSecret} 
+                                        oninput={handleEcaClientSecretChange} />
+                                    <span class="field-subtext">Found in Org 2 Setup -> External Client App Manager -> Settings -> Consumer Key and Secret.</span>
+                                </div>
+
+                                <div class="oauth-launch-cta-row">
+                                    <button 
+                                        type="button" 
+                                        class="launch-oauth-button" 
+                                        onclick={handleConnectClientCredentials} 
+                                        disabled={isConnectingOrg}>
+                                        <lightning-icon icon-name="utility:connected_apps" size="small" variant="inverse"></lightning-icon>
+                                        <span>Connect via Client Credentials</span>
+                                    </button>
+                                    <span class="oauth-cta-hint">Directly authenticates with Org 2 via <code>grant_type=client_credentials</code> and mints a JWT session.</span>
+                                </div>
+                            </template>
+
+                            <!-- 2. OAUTH POPUP FLOW -->
+                            <template if:true={isAuthMethodPopupFlow}>
+                                <div class="setup-intro-banner">
+                                    <div class="banner-icon-col">
+                                        <lightning-icon icon-name="utility:world" size="medium" class="banner-icon"></lightning-icon>
+                                    </div>
+                                    <div class="banner-text-col">
+                                        <h4>Interactive Browser OAuth 2.0 Popup</h4>
+                                        <p>Authenticate interactively in a browser popup with your Salesforce credentials.</p>
+                                    </div>
+                                </div>
+
+                                <div class="modal-form-group">
+                                    <label class="modal-form-label">Salesforce Environment</label>
+                                    <div class="env-toggle-pills">
+                                        <button 
+                                            type="button" 
+                                            class={productionEnvBtnClass} 
+                                            data-env="production" 
+                                            onclick={handleSelectOAuthEnv}>
+                                            <lightning-icon icon-name="utility:world" size="xx-small"></lightning-icon>
+                                            <span>Production / Dev</span>
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            class={sandboxEnvBtnClass} 
+                                            data-env="sandbox" 
+                                            onclick={handleSelectOAuthEnv}>
+                                            <lightning-icon icon-name="utility:custom_apps" size="xx-small"></lightning-icon>
+                                            <span>Sandbox</span>
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            class={customEnvBtnClass} 
+                                            data-env="custom" 
+                                            onclick={handleSelectOAuthEnv}>
+                                            <lightning-icon icon-name="utility:company" size="xx-small"></lightning-icon>
+                                            <span>My Domain</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <template if:true={isCustomEnvSelected}>
+                                    <div class="modal-form-group">
+                                        <label class="modal-form-label" for="custom-domain-url">Custom My Domain URL</label>
+                                        <input 
+                                            id="custom-domain-url"
+                                            type="url" 
+                                            class="modal-form-input" 
+                                            placeholder="https://yourcompany.my.salesforce.com"
+                                            value={customLoginUrl} 
+                                            oninput={handleCustomLoginUrlChange} />
+                                    </div>
+                                </template>
+
+                                <div class="advanced-oauth-toggle" onclick={toggleAdvancedOAuth}>
+                                    <span>Advanced: Connected App Client ID</span>
+                                    <lightning-icon icon-name={advancedOAuthChevronIcon} size="xx-small"></lightning-icon>
+                                </div>
+                                <template if:true={showAdvancedOAuth}>
+                                    <div class="modal-form-group advanced-oauth-fields">
+                                        <label class="modal-form-label" for="client-id-input">Connected App Consumer Key (Client ID)</label>
+                                        <input 
+                                            id="client-id-input"
+                                            type="text" 
+                                            class="modal-form-input code-font" 
+                                            value={customClientId} 
+                                            oninput={handleClientIdChange} />
+                                    </div>
+                                </template>
+
+                                <div class="oauth-launch-cta-row">
+                                    <button 
+                                        type="button" 
+                                        class="launch-oauth-button" 
+                                        onclick={handleStartOAuthPopupFlow} 
+                                        disabled={isConnectingOrg}>
+                                        <lightning-icon icon-name="utility:open" size="small" variant="inverse"></lightning-icon>
+                                        <span>Launch OAuth 2.0 Authorization Window</span>
+                                    </button>
+                                </div>
+                            </template>
+
+                            <!-- 3. MANUAL TOKEN INPUT -->
+                            <template if:true={isAuthMethodManual}>
+                                <div class="setup-intro-banner">
+                                    <div class="banner-icon-col">
+                                        <lightning-icon icon-name="utility:password" size="medium" class="banner-icon"></lightning-icon>
+                                    </div>
+                                    <div class="banner-text-col">
+                                        <h4>Direct Bearer Token Connection</h4>
+                                        <p>Paste a pre-generated OAuth or CLI session token directly.</p>
+                                    </div>
+                                </div>
+
+                                <div class="modal-form-group">
+                                    <label class="modal-form-label" for="manual-instance-url">Instance URL</label>
+                                    <input 
+                                        id="manual-instance-url"
+                                        type="url" 
+                                        class="modal-form-input" 
+                                        placeholder="https://yourcompany.my.salesforce.com"
+                                        value={manualInstanceUrl} 
+                                        oninput={handleManualInstanceUrlChange} />
+                                </div>
+                                <div class="modal-form-group">
+                                    <label class="modal-form-label" for="manual-access-token">Session ID / Bearer Access Token</label>
+                                    <textarea 
+                                        id="manual-access-token"
+                                        class="modal-form-input token-textarea" 
+                                        placeholder="Paste OAuth access token or CLI session token here..."
+                                        value={manualAccessToken} 
+                                        oninput={handleManualAccessTokenChange} 
+                                        rows="2">
+                                    </textarea>
+                                </div>
+                                <button 
+                                    type="button" 
+                                    class="action-pill-btn manual-save-btn" 
+                                    onclick={handleSaveManualToken} 
+                                    disabled={isConnectingOrg}>
+                                    <lightning-icon icon-name="utility:save" size="xx-small"></lightning-icon>
+                                    <span>Save &amp; Connect Directly</span>
+                                </button>
+                            </template>
+
+                            <div class="custom-modal-actions">
+                                <button type="button" class="modal-btn-cancel" onclick={toggleOrgModal}>Cancel</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+
+            <!-- CHAT MESSAGES BODY -->
+            <div class="chat-body" onscroll={handleScroll}>
+                <!-- ZERO STATE / RANDOM AGREEABLE QUOTE -->
+                <template if:false={hasMessages}>
+                    <div class="welcome-container">
+                        <div class="welcome-avatar-orb">
+                            <svg class="ai-neural-core-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-dasharray="3 2"/>
+                                <circle cx="12" cy="12" r="5" stroke="currentColor"/>
+                                <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                                <path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>
+                            </svg>
+                        </div>
+                        <h2 class="welcome-tagline">{welcomeTaglineText}</h2>
+
+                        <!-- AGREEABLE QUOTE CARD (NO RECOMMENDED PROMPT TEXT) -->
+                        <div class="quote-card-container">
+                            <div class="quote-mark-icon-wrap">
+                                <svg class="quote-svg-icon" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+                                </svg>
+                            </div>
+                            <blockquote class="quote-text-body">
+                                "{currentQuote.text}"
+                            </blockquote>
+                            <div class="quote-author-row">
+                                <span class="quote-author-name">— {currentQuote.author}</span>
+                                <button class="quote-refresh-btn" onclick={shuffleRandomQuote} title="Get another inspiring quote">
+                                    <lightning-icon icon-name="utility:refresh" size="xx-small" class="quote-refresh-icon"></lightning-icon>
+                                    <span>New Quote</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- MESSAGE LIST -->
+                <template if:true={hasMessages}>
+                    <div class="messages-stream">
+                        <template for:each={messages} for:item="msg">
+                            <div key={msg.id} class={msg.roleClass}>
+                                <!-- User Message -->
+                                <template if:true={msg.isUser}>
+                                    <div class="user-bubble-container">
+                                        <!-- Message Edit Mode -->
+                                        <template if:true={msg.isEditing}>
+                                            <div class="user-edit-wrapper">
+                                                <textarea 
+                                                    class="user-edit-textarea" 
+                                                    data-id={msg.id}
+                                                    oninput={handleUserMessageEditInput}
+                                                    onkeydown={handleUserMessageEditKeyDown}>{msg.editContentDraft}</textarea>
+                                                <div class="user-edit-footer">
+                                                    <span class="edit-hint-label">Resubmitting will recalculate response from this point</span>
+                                                    <div class="user-edit-actions">
+                                                        <button class="user-edit-btn cancel-btn" data-id={msg.id} onclick={handleCancelEditMessage}>Cancel</button>
+                                                        <button class="user-edit-btn save-btn" data-id={msg.id} onclick={handleSaveAndResubmitMessage}>Save & Resubmit</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Normal User Message Display -->
+                                        <template if:false={msg.isEditing}>
+                                            <div class="user-bubble">
+                                                <div class="msg-text-content">{msg.rawContent}</div>
+                                            </div>
+                                            <div class="msg-meta user-meta">
+                                                <span class="timestamp">{msg.timeStr}</span>
+                                                <span class="role-tag">You</span>
+                                                <button 
+                                                    class="msg-edit-trigger-btn" 
+                                                    data-id={msg.id} 
+                                                    title="Edit message and rerun AI" 
+                                                    onclick={handleStartEditMessage}>
+                                                    <lightning-icon icon-name="utility:edit" size="xx-small" class="edit-pencil-icon"></lightning-icon>
+                                                    <span class="edit-trigger-text">Edit</span>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                <!-- AI Message -->
+                                <template if:false={msg.isUser}>
+                                    <div class="ai-bubble-container">
+                                        <div class="ai-header-meta">
+                                            <div class="ai-avatar-small">
+                                                <lightning-icon icon-name="utility:bot" size="xx-small" class="ai-avatar-icon-slds"></lightning-icon>
+                                            </div>
+                                            <span class="ai-sender-name">{msg.modelLabel}</span>
+                                            <span class="timestamp">{msg.timeStr}</span>
+                                            <template if:true={msg.latencyStr}>
+                                                <span class="ai-latency-badge" title="Response generation latency">⚡ {msg.latencyStr}</span>
+                                            </template>
+                                        </div>
+
+                                        <!-- Unified Output Render (Text + VS Code Style Code Blocks with Copy Button) -->
+                                        <div class="ai-bubble">
+                                            <template for:each={msg.renderBlocks} for:item="block">
+                                                <!-- Formatted Text Chunk -->
+                                                <template if:false={block.isCode}>
+                                                    <lightning-formatted-rich-text key={block.id} value={block.content}></lightning-formatted-rich-text>
+                                                </template>
+
+                                                <!-- VS Code Styled Code Frame with Top Copy Button -->
+                                                <template if:true={block.isCode}>
+                                                    <div key={block.id} class="vscode-code-container">
+                                                        <div class="vscode-titlebar">
+                                                            <div class="vscode-title-left">
+                                                                <div class="vscode-mac-dots">
+                                                                    <span class="v-dot dot-red"></span>
+                                                                    <span class="v-dot dot-yellow"></span>
+                                                                    <span class="v-dot dot-green"></span>
+                                                                </div>
+                                                                <span class="vscode-lang-badge">{block.language}</span>
+                                                            </div>
+                                                            <button 
+                                                                class={block.copyBtnClass} 
+                                                                data-msgid={msg.id} 
+                                                                data-blockid={block.id} 
+                                                                data-code={block.rawCode} 
+                                                                onclick={handleCopyCodeBlock} 
+                                                                title="Copy code to clipboard">
+                                                                <lightning-icon icon-name={block.copyIconName} size="xx-small" class="code-btn-icon"></lightning-icon>
+                                                                <span class="code-btn-label">{block.copyLabel}</span>
+                                                            </button>
+                                                        </div>
+                                                        <div class="vscode-editor-scroll">
+                                                            <pre class="vscode-code-pre"><code>{block.rawCode}</code></pre>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </template>
+                                        </div>
+
+
+
+                                        <!-- DYNAMIC FOLLOW-UP PROMPT SUGGESTIONS -->
+                                        <template if:true={msg.followUps}>
+                                            <div class="follow-up-stream">
+                                                <span class="follow-up-hint">Suggested follow-ups:</span>
+                                                <div class="follow-up-pills">
+                                                    <template for:each={msg.followUps} for:item="fu">
+                                                        <button 
+                                                            key={fu} 
+                                                            class="follow-up-chip" 
+                                                            data-prompt={fu} 
+                                                            onclick={handleFollowUpClick}>
+                                                            <lightning-icon icon-name="utility:forward" size="xx-small" class="fu-chip-icon"></lightning-icon>
+                                                            <span>{fu}</span>
+                                                        </button>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Message Actions: Copy, Speak, Feedback -->
+                                        <div class="ai-actions-bar">
+                                            <!-- Copy Button -->
+                                            <button 
+                                                class={msg.copyButtonClass} 
+                                                data-id={msg.id} 
+                                                title="Copy entire response"
+                                                onclick={handleCopyMessage}>
+                                                <lightning-icon 
+                                                    icon-name={msg.copyIconName} 
+                                                    size="xx-small" 
+                                                    class="action-icon">
+                                                </lightning-icon>
+                                                <span>{msg.copyLabel}</span>
+                                            </button>
+
+                                            <!-- Text to Speech (Read Aloud) -->
+                                            <button 
+                                                class={msg.speakButtonClass} 
+                                                data-id={msg.id} 
+                                                title="Listen to response"
+                                                onclick={handleToggleSpeak}>
+                                                <lightning-icon 
+                                                    icon-name={msg.speakIconName} 
+                                                    size="xx-small" 
+                                                    class="action-icon">
+                                                </lightning-icon>
+                                                <span>{msg.speakLabel}</span>
+                                            </button>
+
+                                            <div class="feedback-divider"></div>
+
+                                            <!-- Thumbs Up -->
+                                            <button 
+                                                class={msg.likeButtonClass} 
+                                                data-id={msg.id} 
+                                                title="Helpful analysis"
+                                                onclick={handleLikeMessage}>
+                                                <lightning-icon icon-name="utility:like" size="xx-small"></lightning-icon>
+                                            </button>
+
+                                            <!-- Thumbs Down -->
+                                            <button 
+                                                class={msg.dislikeButtonClass} 
+                                                data-id={msg.id} 
+                                                title="Needs improvement"
+                                                onclick={handleDislikeMessage}>
+                                                <lightning-icon icon-name="utility:dislike" size="xx-small"></lightning-icon>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Dynamic Skeleton Response & Generating Animation -->
+                        <template if:true={loading}>
+                            <div class="ai-msg typing-row">
+                                <div class="ai-bubble-container">
+                                    <div class="ai-header-meta">
+                                        <div class="ai-avatar-small pulsing">
+                                            <lightning-icon icon-name="utility:apex" size="xx-small" class="pulse-avatar-icon"></lightning-icon>
+                                        </div>
+                                        <span class="ai-sender-name">Synthesizing Response...</span>
+                                    </div>
+                                    <div class="ai-bubble skeleton-response-bubble">
+                                        <div class="skeleton-stream-lines">
+                                            <div class="sk-shimmer sk-stream-line w-full"></div>
+                                            <div class="sk-shimmer sk-stream-line w-90"></div>
+                                            <div class="sk-shimmer sk-stream-line w-80"></div>
+                                            <div class="sk-shimmer sk-stream-line w-60"></div>
+                                        </div>
+                                        <div class="generating-meta-row">
+                                            <div class="shimmer-dots">
+                                                <span class="dot"></span>
+                                                <span class="dot"></span>
+                                                <span class="dot"></span>
+                                            </div>
+                                            <span class="generating-text">Analyzing query and composing response...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+            </div>
+
+            <!-- Floating Scroll-to-Bottom Button -->
+            <template if:true={showScrollBottom}>
+                <button class="scroll-bottom-fab" onclick={scrollToBottom} title="Jump to latest message">
+                    <lightning-icon icon-name="utility:down" size="x-small"></lightning-icon>
+                </button>
+            </template>
+
+            <!-- CHAT INPUT DOCK (Streamlined Input, No File Uploads) -->
+            <footer class="chat-input-dock">
+                <div class="input-card">
+                    <textarea
+                        class="native-chat-textarea"
+                        placeholder={inputPlaceholderText}
+                        rows="1"
+                        value={userInput}
+                        oninput={handleInputChange}
+                        onkeydown={handleKeyDown}>
+                    </textarea>
+
+                    <div class="dock-actions">
+                        <!-- Speech-to-Text Microphone Button -->
+                        <button 
+                            class={micButtonClass} 
+                            title={micButtonTitle} 
+                            onclick={handleToggleSpeechRecognition}>
+                            <template if:true={isListening}>
+                                <span class="mic-pulse-ring"></span>
+                            </template>
+                            <lightning-icon 
+                                icon-name="utility:unmuted" 
+                                size="x-small" 
+                                class="mic-icon">
+                            </lightning-icon>
+                        </button>
+
+                        <!-- Send Button -->
+                        <button 
+                            class="send-action-btn" 
+                            disabled={isSendDisabled}
+                            title="Send message (Enter)"
+                            onclick={sendMessage}>
+                            <lightning-icon icon-name="utility:send" size="x-small" class="send-icon"></lightning-icon>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="dock-footnote">
+                    <span class="shortcut-tip">
+                        <kbd>Enter</kbd> to send • <kbd>Shift</kbd>+<kbd>Enter</kbd> for new line
+                    </span>
+                    <template if:true={userInput}>
+                        <span class="char-count">{charCountText}</span>
+                    </template>
+                </div>
+            </footer>
+        </div>
+                    </template>
+            </template>
+
+            <!-- MULTI-COLOUR THEME PALETTE MODAL (AVAILABLE GLOBALLY ON AUTH & CHAT VIEWS) -->
+            <template if:true={isThemePaletteOpen}>
+                <div class="history-backdrop" onclick={toggleThemePalette}></div>
+                <div class="theme-palette-panel">
+                    <div class="theme-palette-header">
+                        <div class="theme-palette-title">
+                            <div class="theme-icon-badge">
+                                <lightning-icon icon-name="utility:palette" size="small" class="theme-hdr-icon"></lightning-icon>
+                            </div>
+                            <div class="theme-title-meta">
+                                <h3>Interface Color Themes</h3>
+                                <p>Select your favorite multi-colour style for the AI workspace</p>
+                            </div>
+                        </div>
+                        <button class="icon-btn close-btn" onclick={toggleThemePalette} title="Close">
+                            <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                        </button>
+                    </div>
+
+                    <div class="theme-options-grid">
+                        <template for:each={themeOptions} for:item="th">
+                            <div 
+                                key={th.id} 
+                                class={th.cardClass} 
+                                data-id={th.id} 
+                                onclick={handleSelectTheme}>
+                                <div class="theme-swatch-circle" style={th.gradientStyle}>
+                                    <template if:true={th.isSelected}>
+                                        <lightning-icon icon-name="utility:check" size="xx-small" class="theme-check-icon"></lightning-icon>
+                                    </template>
+                                </div>
+                                <div class="theme-card-details">
+                                    <span class="theme-card-name">{th.label}</span>
+                                    <span class="theme-card-desc">{th.desc}</span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </template>
+    </div>
+</template>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Is_Encrypted__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Flag indicating if the payload is end-to-end encrypted with zero-knowledge AES-GCM</description>
+    <externalId>false</externalId>
+    <label>Is Encrypted</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

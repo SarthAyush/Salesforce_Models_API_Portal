@@ -1,0 +1,667 @@
+<template>
+    <div class={computedContainerClass}>
+        <!-- AMBIENT BACKDROP -->
+        <div class="ambient-glow purple-ambient"></div>
+        <div class="ambient-glow cyan-ambient"></div>
+
+        <!-- TOP NAVIGATION BAR -->
+        <header class="admin-header">
+            <div class="admin-brand-group">
+                <div class="admin-shield-icon-badge">
+                    <lightning-icon icon-name="standard:portal" size="small" variant="inverse"></lightning-icon>
+                </div>
+                <div class="admin-title-meta">
+                    <h1 class="admin-title">System Analytics & Resource Oversight</h1>
+                    <p class="admin-subtitle">Real-time intelligence tracking, user permission governance, and multi-model API utilization</p>
+                </div>
+            </div>
+
+            <div class="admin-actions-group">
+                <!-- Launch AI Chat -->
+                <button class="action-btn chat-switch-btn" onclick={handleSwitchToChat} title="Launch AI Chat Interface">
+                    <lightning-icon icon-name="utility:chat" size="x-small" class="btn-icon"></lightning-icon>
+                    <span>Launch AI Assistant</span>
+                </button>
+
+                <!-- Refresh Data -->
+                <button class="action-btn refresh-btn" onclick={loadAnalyticsData} title="Refresh System Metrics">
+                    <lightning-icon icon-name="utility:refresh" size="x-small" class="btn-icon"></lightning-icon>
+                    <span>Refresh</span>
+                </button>
+
+                <!-- Sign Out -->
+                <button class="action-btn logout-btn" onclick={handleLogoutClick} title="Sign Out">
+                    <lightning-icon icon-name="utility:logout" size="x-small" class="btn-icon"></lightning-icon>
+                    <span>Sign Out</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- LOADING STATE -->
+        <template lwc:if={isLoading}>
+            <div class="admin-loading-wrapper">
+                <div class="admin-spinner"></div>
+                <span class="loading-label">Aggregating system analytics, bar graph metrics, and user access records...</span>
+            </div>
+        </template>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <template lwc:else>
+            <div class="admin-content-scroll">
+                <!-- TOP KPI CARDS (8 High-Yield Dimensions) -->
+                <div class="kpi-grid">
+                    <!-- Total Users -->
+                    <div class="kpi-card accent-blue">
+                        <div class="kpi-icon-bubble">
+                            <lightning-icon icon-name="standard:user" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-value">{totalUsersFormatted}</span>
+                            <span class="kpi-label">Registered Users</span>
+                        </div>
+                        <div class="kpi-footer-badge">
+                            <span>{activeTodayFormatted} active today</span>
+                        </div>
+                    </div>
+
+                    <!-- Active Today -->
+                    <div class="kpi-card accent-teal">
+                        <div class="kpi-icon-bubble teal">
+                            <lightning-icon icon-name="standard:insights" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-value">{activeTodayFormatted}</span>
+                            <span class="kpi-label">Active Today</span>
+                        </div>
+                        <div class="kpi-footer-badge">
+                            <span>{activeRatePercent}% engagement rate</span>
+                        </div>
+                    </div>
+
+                    <!-- Total Conversations -->
+                    <div class="kpi-card accent-purple">
+                        <div class="kpi-icon-bubble purple">
+                            <lightning-icon icon-name="standard:agent_home" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-value">{totalSessionsFormatted}</span>
+                            <span class="kpi-label">Total Conversations</span>
+                        </div>
+                        <div class="kpi-footer-badge">
+                            <span>Saved in Org database</span>
+                        </div>
+                    </div>
+
+                    <!-- Cumulative Messages -->
+                    <div class="kpi-card accent-amber">
+                        <div class="kpi-icon-bubble amber">
+                            <lightning-icon icon-name="standard:topic" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-value">{totalMessagesFormatted}</span>
+                            <span class="kpi-label">Messages Sent</span>
+                        </div>
+                        <div class="kpi-footer-badge">
+                            <span>Avg {avgMessagesPerUser} msgs/user</span>
+                        </div>
+                    </div>
+
+                    <!-- Tokens Consumed -->
+                    <div class="kpi-card accent-rose">
+                        <div class="kpi-icon-bubble rose">
+                            <lightning-icon icon-name="standard:flow" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-value">{totalTokensFormatted}</span>
+                            <span class="kpi-label">Tokens Consumed</span>
+                        </div>
+                        <div class="kpi-footer-badge">
+                            <span>Avg {avgTokensPerSession} / session</span>
+                        </div>
+                    </div>
+
+                    <!-- Community Hub Activity -->
+                    <div class="kpi-card accent-emerald">
+                        <div class="kpi-icon-bubble emerald">
+                            <lightning-icon icon-name="standard:collaboration" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-value">{communityPostsCount}</span>
+                            <span class="kpi-label">Community Posts</span>
+                        </div>
+                        <div class="kpi-footer-badge">
+                            <span>{communityLikesCount} team likes</span>
+                        </div>
+                    </div>
+
+                    <!-- Account Access & Status -->
+                    <div class="kpi-card accent-crimson">
+                        <div class="kpi-icon-bubble crimson">
+                            <lightning-icon icon-name="standard:record_create" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-value">{frozenUsersCount}</span>
+                            <span class="kpi-label">Frozen Users</span>
+                        </div>
+                        <div class="kpi-footer-badge">
+                            <span>{adminUsersCount} Administrators</span>
+                        </div>
+                    </div>
+
+                    <!-- Daily API Quota Free -->
+                    <div class="kpi-card accent-cyan">
+                        <div class="kpi-icon-bubble cyan">
+                            <lightning-icon icon-name="standard:performance" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-value">{apiPercentRemainingFormatted}%</span>
+                            <span class="kpi-label">Org API Quota Free</span>
+                        </div>
+                        <div class="kpi-progress-bar-container">
+                            <div class="kpi-progress-fill" style={apiProgressStyle}></div>
+                        </div>
+                    </div>
+
+                    <!-- Connected Salesforce Orgs (BYOO) -->
+                    <div class="kpi-card accent-indigo">
+                        <div class="kpi-icon-bubble indigo">
+                            <lightning-icon icon-name="standard:connected_apps" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-value">{connectedOrgsFormatted}</span>
+                            <span class="kpi-label">Connected Orgs (BYOO)</span>
+                        </div>
+                        <div class="kpi-footer-badge">
+                            <span>{connectedOrgsAdoptionRate}% user adoption</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NAVIGATION TABS -->
+                <div class="admin-tabs-nav">
+                    <button class={tabOverviewClass} onclick={setTabOverview}>
+                        <lightning-icon icon-name="utility:dashboard" size="x-small"></lightning-icon>
+                        <span>Analytics & Bar Graphs</span>
+                    </button>
+                    <button class={tabUsersClass} onclick={setTabUsers}>
+                        <lightning-icon icon-name="utility:user" size="x-small"></lightning-icon>
+                        <span>User Management & Access ({userCount})</span>
+                    </button>
+                    <button class={tabAuditClass} onclick={setTabAudit}>
+                        <lightning-icon icon-name="utility:table" size="x-small"></lightning-icon>
+                        <span>Session Audit Logs ({recentSessionCount})</span>
+                    </button>
+                </div>
+
+                <!-- TAB 1: VISUAL ANALYTICS & BAR GRAPHS -->
+                <template lwc:if={isTabOverview}>
+                    <div class="overview-grid">
+                        <!-- 7-DAY ACTIVITY TREND BAR GRAPH -->
+                        <div class="panel-card full-width-card">
+                            <div class="panel-header">
+                                <div class="panel-title-group">
+                                    <h3 class="panel-title">7-Day Message & Token Activity Trend (Bar Graph)</h3>
+                                    <p class="panel-desc">Daily conversational traffic and inference consumption distribution over the past week</p>
+                                </div>
+                            </div>
+
+                            <div class="bar-chart-container">
+                                <div class="chart-y-axis">
+                                    <span>High</span>
+                                    <span>Med</span>
+                                    <span>Low</span>
+                                    <span>0</span>
+                                </div>
+                                <div class="bars-flex-row">
+                                    <template for:each={dailyTrendsWithStyles} for:item="day">
+                                        <div key={day.dayLabel} class="bar-column-wrapper">
+                                            <div class="bar-tooltip">
+                                                <span class="tooltip-msgs">{day.messagesCount} msgs</span>
+                                                <span class="tooltip-tokens">{day.formattedTokens} tokens</span>
+                                            </div>
+                                            <div class="bar-pillar-track">
+                                                <div class="bar-pillar-fill" style={day.columnStyle}></div>
+                                            </div>
+                                            <span class="bar-day-label">{day.dayLabel}</span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TOP POWER USERS CONSUMPTION RANKING (Horizontal Bar Chart) -->
+                        <div class="panel-card">
+                            <div class="panel-header">
+                                <div class="panel-title-group">
+                                    <h3 class="panel-title">Top Power Users by Token Volume</h3>
+                                    <p class="panel-desc">Ranked ranking of highest resource consumers in the workspace</p>
+                                </div>
+                            </div>
+
+                            <div class="horizontal-bars-list">
+                                <template for:each={topUsersRankingWithStyles} for:item="u">
+                                    <div key={u.email} class="hbar-item">
+                                        <div class="hbar-meta-row">
+                                            <span class="hbar-user-name">{u.name}</span>
+                                            <span class="hbar-stats">{u.formattedTokens} tokens ({u.messagesCount} msgs)</span>
+                                        </div>
+                                        <div class="hbar-track">
+                                            <div class="hbar-fill" style={u.fillWidthStyle}></div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- MODEL CONSUMPTION BREAKDOWN -->
+                        <div class="panel-card">
+                            <div class="panel-header">
+                                <div class="panel-title-group">
+                                    <h3 class="panel-title">Model Consumption Breakdown</h3>
+                                    <p class="panel-desc">Share of conversation sessions across connected foundation models</p>
+                                </div>
+                            </div>
+
+                            <template lwc:if={hasModelBreakdown}>
+                                <div class="model-breakdown-list">
+                                    <template for:each={formattedModelBreakdown} for:item="mb">
+                                        <div key={mb.modelName} class="model-usage-item">
+                                            <div class="model-usage-header">
+                                                <span class="model-name">{mb.displayName}</span>
+                                                <span class="model-count">{mb.sessionCount} sessions ({mb.percentage}%)</span>
+                                            </div>
+                                            <div class="model-progress-track">
+                                                <div class="model-progress-fill" style={mb.barStyle}></div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template lwc:else>
+                                <div class="empty-placeholder">
+                                    <p>No model usage records found yet.</p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- TAB 2: USER CONSUMPTION & MANAGEMENT -->
+                <template lwc:if={isTabUsers}>
+                    <div class="panel-card full-width">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <h3 class="panel-title">User Configurations, Access & Org Connections</h3>
+                                <p class="panel-desc">Inspect per-user BYOO external org connections, model permissions, usage tokens, and account controls</p>
+                            </div>
+                            <div class="panel-controls-group">
+                                <div class="filter-pills-bar">
+                                    <button class={filterCategoryAllClass} data-category="all" onclick={handleSelectUserFilter}>
+                                        {filterAllLabel}
+                                    </button>
+                                    <button class={filterCategoryConnectedClass} data-category="connected" onclick={handleSelectUserFilter}>
+                                        {filterConnectedLabel}
+                                    </button>
+                                    <button class={filterCategoryAdminsClass} data-category="admins" onclick={handleSelectUserFilter}>
+                                        {filterAdminsLabel}
+                                    </button>
+                                    <button class={filterCategoryFrozenClass} data-category="frozen" onclick={handleSelectUserFilter}>
+                                        {filterFrozenLabel}
+                                    </button>
+                                </div>
+                                <div class="search-wrapper">
+                                    <input 
+                                        type="text" 
+                                        class="search-input" 
+                                        placeholder="Search by name, email, or org domain..." 
+                                        value={userSearchTerm} 
+                                        oninput={handleUserSearchChange} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="admin-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>User Profile</th>
+                                        <th>Status</th>
+                                        <th>Role</th>
+                                        <th>Connected Org (BYOO)</th>
+                                        <th>Permissions</th>
+                                        <th>Messages</th>
+                                        <th>Tokens</th>
+                                        <th>Last Active</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={filteredUsersList} for:item="u">
+                                        <tr key={u.id}>
+                                            <td>
+                                                <div class="user-cell">
+                                                    <div class="user-avatar-mini">
+                                                        <template if:true={u.profilePictureData}>
+                                                            <img src={u.profilePictureData} class="user-avatar-mini-img" alt={u.name} />
+                                                        </template>
+                                                        <template if:false={u.profilePictureData}>
+                                                            <lightning-icon icon-name={u.avatarIcon} size="x-small" variant="inverse"></lightning-icon>
+                                                        </template>
+                                                    </div>
+                                                    <div class="user-meta-cell">
+                                                        <span class="user-name-strong">{u.name}</span>
+                                                        <span class="user-email-muted">{u.email}</span>
+                                                        <template if:true={u.bio}>
+                                                            <span class="user-bio-snippet">{u.bio}</span>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class={u.statusBadgeClass}>{u.statusLabel}</span>
+                                            </td>
+                                            <td>
+                                                <span class={u.roleBadgeClass}>{u.roleLabel}</span>
+                                            </td>
+                                            <td>
+                                                <template if:true={u.isOrgConnected}>
+                                                    <div class="org-cell-badge" title={u.orgTooltip}>
+                                                        <div class="org-status-pill org-active">
+                                                            <span class="pulse-indicator"></span>
+                                                            <lightning-icon icon-name="utility:connected_apps" size="xx-small"></lightning-icon>
+                                                            <span class="org-domain-text">{u.orgInstanceShort}</span>
+                                                        </div>
+                                                        <span class="org-subtext">{u.orgStatusLabel}</span>
+                                                    </div>
+                                                </template>
+                                                <template if:false={u.isOrgConnected}>
+                                                    <span class="org-status-pill org-none" title="Using Host Salesforce Org Default Models API">
+                                                        <lightning-icon icon-name="utility:lock" size="xx-small"></lightning-icon>
+                                                        <span>Host Models</span>
+                                                    </span>
+                                                </template>
+                                            </td>
+                                            <td>
+                                                <div class="permissions-chips-row">
+                                                    <span class={u.chatPermClass} title="Can Chat">Chat</span>
+                                                    <span class={u.commPermClass} title="Can Use Community">Community</span>
+                                                    <span class={u.advPermClass} title="Access High-Tier Models">Adv Models</span>
+                                                </div>
+                                            </td>
+                                            <td class="numeric-cell">{u.totalMessages}</td>
+                                            <td class="numeric-cell">{u.formattedTokens}</td>
+                                            <td>{u.formattedLastLogin}</td>
+                                            <td>
+                                                <div class="row-actions-group">
+                                                    <!-- Configure User Button -->
+                                                    <button 
+                                                        class="action-tiny-btn btn-configure" 
+                                                        data-id={u.id} 
+                                                        onclick={handleOpenConfigureUser} 
+                                                        title="Configure User Information & Permissions">
+                                                        <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>
+                                                        <span>Configure</span>
+                                                    </button>
+
+                                                    <!-- Quick Freeze / Unfreeze -->
+                                                    <button 
+                                                        class={u.freezeToggleBtnClass} 
+                                                        data-id={u.id} 
+                                                        data-frozen={u.isFrozen} 
+                                                        onclick={handleQuickToggleFreeze} 
+                                                        title={u.freezeToggleBtnTooltip}>
+                                                        <span>{u.freezeToggleBtnLabel}</span>
+                                                    </button>
+
+                                                    <!-- Role Toggle -->
+                                                    <button 
+                                                        class={u.roleToggleBtnClass} 
+                                                        data-id={u.id} 
+                                                        data-admin={u.isAdmin} 
+                                                        onclick={handleToggleAdminRole} 
+                                                        title="Change Administrator Privileges">
+                                                        {u.roleToggleBtnLabel}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- TAB 3: SESSION AUDIT LOGS -->
+                <template lwc:if={isTabAudit}>
+                    <div class="panel-card full-width">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <h3 class="panel-title">Recent Conversation Session Logs</h3>
+                                <p class="panel-desc">Audit history of conversations generated across models and users</p>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="admin-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Session Title</th>
+                                        <th>User Account</th>
+                                        <th>Model</th>
+                                        <th>Message Count</th>
+                                        <th>Last Interaction Preview</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={formattedRecentSessions} for:item="s">
+                                        <tr key={s.id}>
+                                            <td class="title-cell">
+                                                <strong>{s.title}</strong>
+                                            </td>
+                                            <td>
+                                                <div class="audit-user">
+                                                    <span>{s.userName}</span>
+                                                    <span class="audit-email">{s.userEmail}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="model-badge">{s.modelShortName}</span>
+                                            </td>
+                                            <td class="numeric-cell">{s.messageCount}</td>
+                                            <td class="snippet-cell" title={s.lastPreview}>{s.lastPreview}</td>
+                                            <td class="date-cell">{s.formattedDate}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- ADMIN USER CONFIGURATION MODAL -->
+        <template if:true={isEditUserModalOpen}>
+            <div class="modal-backdrop" onclick={closeEditUserModal}></div>
+            <div class="config-modal-card">
+                <div class="modal-header">
+                    <div class="modal-title-group">
+                        <lightning-icon icon-name="standard:user" size="small"></lightning-icon>
+                        <div>
+                            <h2 class="modal-heading">Configure User Access & Profile</h2>
+                            <span class="modal-subheading">{editUserEmail}</span>
+                        </div>
+                    </div>
+                    <button class="modal-close-btn" onclick={closeEditUserModal} title="Close">
+                        <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- Name input -->
+                    <div class="form-group">
+                        <label class="form-label" for="edit-user-name">Full Display Name</label>
+                        <input 
+                            id="edit-user-name" 
+                            type="text" 
+                            class="form-input" 
+                            value={editUserName} 
+                            oninput={handleEditNameChange} />
+                    </div>
+
+                    <!-- Bio input -->
+                    <div class="form-group">
+                        <label class="form-label" for="edit-user-bio">User Biography / Department</label>
+                        <textarea 
+                            id="edit-user-bio" 
+                            class="form-textarea" 
+                            rows="2" 
+                            value={editUserBio} 
+                            oninput={handleEditBioChange}>
+                        </textarea>
+                    </div>
+
+                    <!-- Status & Role Toggles -->
+                    <div class="section-divider">
+                        <span>Role & Account Status</span>
+                    </div>
+
+                    <div class="checkbox-options-grid">
+                        <label class="toggle-checkbox-row">
+                            <input 
+                                type="checkbox" 
+                                checked={editUserIsAdmin} 
+                                onchange={handleEditIsAdminChange} />
+                            <div class="checkbox-text-block">
+                                <span class="checkbox-title">System Administrator</span>
+                                <span class="checkbox-desc">Grants full access to this Admin Analytics and User Management dashboard</span>
+                            </div>
+                        </label>
+
+                        <label class="toggle-checkbox-row freeze-row">
+                            <input 
+                                type="checkbox" 
+                                checked={editUserIsFrozen} 
+                                onchange={handleEditIsFrozenChange} />
+                            <div class="checkbox-text-block">
+                                <span class="checkbox-title freeze-title">Freeze User Account</span>
+                                <span class="checkbox-desc">Immediately suspends user login and prevents all app operations</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Fine-Grained Permissions -->
+                    <div class="section-divider">
+                        <span>Granular Workspace Permissions</span>
+                    </div>
+
+                    <div class="checkbox-options-grid">
+                        <label class="toggle-checkbox-row">
+                            <input 
+                                type="checkbox" 
+                                checked={editUserCanChat} 
+                                onchange={handleEditCanChatChange} />
+                            <div class="checkbox-text-block">
+                                <span class="checkbox-title">Can Initiate AI Chats</span>
+                                <span class="checkbox-desc">Allows prompting and saving AI conversation sessions</span>
+                            </div>
+                        </label>
+
+                        <label class="toggle-checkbox-row">
+                            <input 
+                                type="checkbox" 
+                                checked={editUserCanUseCommunity} 
+                                onchange={handleEditCanUseCommunityChange} />
+                            <div class="checkbox-text-block">
+                                <span class="checkbox-title">Can Access & Post in Community Hub</span>
+                                <span class="checkbox-desc">Allows posting discussions, asking questions, and liking team posts</span>
+                            </div>
+                        </label>
+
+                        <label class="toggle-checkbox-row">
+                            <input 
+                                type="checkbox" 
+                                checked={editUserCanAccessAdvancedModels} 
+                                onchange={handleEditCanAccessAdvModelsChange} />
+                            <div class="checkbox-text-block">
+                                <span class="checkbox-title">Access High-Tier Models</span>
+                                <span class="checkbox-desc">Permits selecting Claude 4.5 Opus, GPT 5, and O3 reasoning models</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Connected Salesforce Org Details -->
+                    <div class="section-divider">
+                        <span>Connected Salesforce Org (BYOO Gateway)</span>
+                    </div>
+
+                    <template if:true={editUserIsOrgConnected}>
+                        <div class="org-config-card">
+                            <div class="org-config-card-header">
+                                <div class="org-config-card-title">
+                                    <lightning-icon icon-name="utility:connected_apps" size="small" class="org-config-icon"></lightning-icon>
+                                    <div>
+                                        <h4>{editUserOrgType}</h4>
+                                        <span class="org-config-date">Connected: {editUserOrgConnectedDate}</span>
+                                    </div>
+                                </div>
+                                <span class="badge-status-live">LIVE</span>
+                            </div>
+                            <div class="org-details-grid">
+                                <div class="org-detail-item">
+                                    <span class="org-detail-label">Instance Domain</span>
+                                    <span class="org-detail-val code-font">{editUserOrgInstanceUrl}</span>
+                                </div>
+                                <div class="org-detail-item">
+                                    <span class="org-detail-label">Run As Identity</span>
+                                    <span class="org-detail-val">{editUserOrgUsername}</span>
+                                </div>
+                                <template if:true={editUserOrgClientId}>
+                                    <div class="org-detail-item">
+                                        <span class="org-detail-label">Client ID (Consumer Key)</span>
+                                        <span class="org-detail-val code-font">{editUserOrgClientId}</span>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="org-disconnect-action-row">
+                                <button 
+                                    type="button" 
+                                    class="btn-admin-disconnect" 
+                                    disabled={isDisconnectingUserOrg} 
+                                    onclick={handleAdminDisconnectUserOrg}>
+                                    <lightning-icon icon-name="utility:close" size="xx-small" variant="inverse"></lightning-icon>
+                                    <span>Disconnect / Reset User Org Connection</span>
+                                </button>
+                                <span class="org-disconnect-hint">Removes saved OAuth token & credentials for this user. Next query will use host org Models API.</span>
+                            </div>
+                        </div>
+                    </template>
+                    <template if:false={editUserIsOrgConnected}>
+                        <div class="org-empty-card">
+                            <lightning-icon icon-name="utility:info_alt" size="small" class="org-empty-icon"></lightning-icon>
+                            <div class="org-empty-text">
+                                <strong>Host Org Einstein Gateway</strong>
+                                <p>This user has not connected an external Salesforce org. All model generations execute against the host org's default Models API quota.</p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="modal-btn-cancel" onclick={closeEditUserModal}>Cancel</button>
+                    <button class="modal-btn-save" disabled={isSavingUserConfig} onclick={handleSaveUserConfig}>
+                        <template if:true={isSavingUserConfig}>
+                            <span class="btn-spinner"></span>
+                            <span>Saving Changes...</span>
+                        </template>
+                        <template if:false={isSavingUserConfig}>
+                            <span>Save Configuration</span>
+                        </template>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>

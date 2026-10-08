@@ -1,0 +1,116 @@
+<template>
+    <lightning-card title=" " class="main-card">
+
+        <template for:each={files} for:item="file">
+            <div key={file.fileName} class="file-chip">
+                📄 {file.fileName}
+            </div>
+        </template>
+
+        <div class="upload-section">
+            <lightning-file-upload
+                label="Upload PDF"
+                accept=".pdf"
+                onuploadfinished={handleUpload}>
+            </lightning-file-upload>
+        </div>
+
+        <template if:true={isLoading}>
+            <div class="loader">
+                <lightning-spinner
+                    alternative-text="Processing file"
+                    size="large">
+                </lightning-spinner>
+                <p class="loader-text">Extracting your File....</p>
+            </div>
+        </template>
+
+        <template if:true={response}>
+            <div class="response-wrapper">
+
+                <lightning-card
+                    title="Purchase Order Detail"
+                    icon-name="standard:orders"
+                    class="po-card">
+
+                    <div class="po-grid">
+
+                        <div class="po-section">
+                            <h3>Purchase Info</h3>
+                            <p><span>PO Number:</span> {podetail.poNumber}</p>
+                            <p><span>PO Date:</span> {podetail.poDate}</p>
+                        </div>
+
+                        <div class="po-section">
+                            <h3>Supplier</h3>
+                            <p><span>Name:</span> {podetail.supplierName}</p>
+                            <p><span>GST:</span> {podetail.supplierGST}</p>
+                        </div>
+
+                        <div class="po-section">
+                            <h3>Buyer</h3>
+                            <p><span>Name:</span> {podetail.buyerName}</p>
+                            <p><span>GST:</span> {podetail.buyerGST}</p>
+                        </div>
+
+                        <div class="po-section full-width">
+                            <h3>Delivery Address</h3>
+                            <p>{podetail.deliveryAddress}</p>
+                        </div>
+
+                        <div class="po-summary full-width">
+                            <p><b>Subtotal:</b> {podetail.subtotal}</p>
+                            <p><b>Tax:</b> {podetail.tax}</p>
+                            <p class="total">
+                                <b>Total:</b> {podetail.totalAmount}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <h3 class="line-header">Line Items</h3>
+
+                    <template if:true={podetail.lineItems}>
+                        <div class="line-items">
+                            <template
+                                for:each={podetail.lineItems}
+                                for:item="item"
+                                for:index="index">
+
+                                <div key={item.itemName} class="line-item-card">
+                                    <p class="item-title">Item {index}</p>
+                                    <p><span>Name:</span> {item.itemName}</p>
+                                    <p><span>Qty:</span> {item.quantity}</p>
+                                    <p><span>Unit Price:</span> {item.unitPrice}</p>
+                                    <p><span>Amount:</span> {item.amount}</p>
+                                </div>
+
+                            </template>
+                        </div>
+                    </template>
+
+                </lightning-card>
+
+                <!-- ACTION BAR -->
+                <div class="action-bar">
+                    <lightning-button
+    label="Generate Order"
+    variant="brand"
+    onclick={generateOrder}
+    disabled={isGenerateDisabled}>
+</lightning-button>
+
+<lightning-button
+    label="Cancel"
+    variant="neutral"
+    onclick={handleCancel}
+    class="slds-m-left_small">
+</lightning-button>
+
+                </div>
+
+            </div>
+        </template>
+
+    </lightning-card>
+</template>

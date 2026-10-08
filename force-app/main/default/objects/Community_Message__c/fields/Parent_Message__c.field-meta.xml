@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Parent_Message__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Reference to the parent discussion message for replies and threads</description>
+    <externalId>false</externalId>
+    <label>Parent Message</label>
+    <referenceTo>Community_Message__c</referenceTo>
+    <relationshipLabel>Replies</relationshipLabel>
+    <relationshipName>Replies</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

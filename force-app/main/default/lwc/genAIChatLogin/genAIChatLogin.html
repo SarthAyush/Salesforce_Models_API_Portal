@@ -1,0 +1,281 @@
+<template>
+    <div class={computedContainerClass}>
+        <div class="auth-card">
+            <!-- Glowing Ambient Accent -->
+            <div class="ambient-glow"></div>
+
+            <!-- Header -->
+            <div class="auth-header">
+                <div class="auth-brand-badge">
+                    <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                    </svg>
+                    <span>Intelligence Portal</span>
+                </div>
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Sign in to your intelligent AI workspace and saved conversation history.</p>
+            </div>
+
+            <!-- Role Selector: Standard User vs Admin -->
+            <div class="role-selector-container">
+                <div class="role-pills-track">
+                    <button 
+                        type="button" 
+                        class={userRolePillClass} 
+                        data-role="user" 
+                        onclick={handleSelectRole}>
+                        <svg class="role-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Standard User</span>
+                    </button>
+                    <button 
+                        type="button" 
+                        class={adminRolePillClass} 
+                        data-role="admin" 
+                        onclick={handleSelectRole}>
+                        <svg class="role-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Administrator</span>
+                    </button>
+                </div>
+                <template lwc:if={isAdminRole}>
+                    <p class="role-hint-text">Admin mode enables model consumption monitoring, active user analytics, and system oversight.</p>
+                </template>
+            </div>
+
+            <!-- Error Banner -->
+            <template lwc:if={errorMessage}>
+                <div class="auth-error-banner" role="alert">
+                    <svg class="error-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <span>{errorMessage}</span>
+                </div>
+            </template>
+
+            <!-- Success Banner -->
+            <template lwc:if={successMessage}>
+                <div class="auth-success-banner" role="status">
+                    <svg class="success-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    <span>{successMessage}</span>
+                </div>
+            </template>
+
+            <!-- Login Form -->
+            <form onsubmit={handleLoginSubmit} class="auth-form">
+                <div class="form-group">
+                    <label class="form-label" for="login-email">Email Address</label>
+                    <div class="input-wrapper">
+                        <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                        <input
+                            id="login-email"
+                            type="email"
+                            class="form-input"
+                            placeholder="you@company.com"
+                            value={email}
+                            oninput={handleEmailChange}
+                            required
+                            autocomplete="email"
+                        />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="label-row">
+                        <label class="form-label" for="login-password">Password</label>
+                        <button type="button" class="link-btn" onclick={openForgotPasswordModal}>Forgot password?</button>
+                    </div>
+                    <div class="input-wrapper">
+                        <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                        </svg>
+                        <input
+                            id="login-password"
+                            type={passwordInputType}
+                            class="form-input"
+                            placeholder="Enter your password"
+                            value={password}
+                            oninput={handlePasswordChange}
+                            required
+                            autocomplete="current-password"
+                        />
+                        <button type="button" class="password-toggle-btn" onclick={togglePasswordVisibility} aria-label="Toggle password visibility">
+                            <template lwc:if={showPassword}>
+                                <svg viewBox="0 0 20 20" fill="currentColor" class="toggle-icon">
+                                    <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" />
+                                    <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                                </svg>
+                            </template>
+                            <template lwc:else>
+                                <svg viewBox="0 0 20 20" fill="currentColor" class="toggle-icon">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                </svg>
+                            </template>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" disabled={isLoading}>
+                    <template lwc:if={isLoading}>
+                        <span class="spinner"></span>
+                        <span>Verifying Access...</span>
+                    </template>
+                    <template lwc:else>
+                        <span>Sign In as {selectedRoleLabel}</span>
+                        <svg class="arrow-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </template>
+                </button>
+            </form>
+
+            <!-- Footer Switcher -->
+            <div class="auth-footer">
+                <span>Don't have an account yet?</span>
+                <button type="button" class="switch-link-btn" onclick={handleSwitchToSignup}>Create Account</button>
+            </div>
+        </div>
+
+        <!-- 2-Step Forgot / Reset Password Modal with Email OTP Verification -->
+        <template lwc:if={showResetModal}>
+            <div class="modal-backdrop" onclick={closeForgotPasswordModal}>
+                <div class="modal-card" onclick={stopModalPropagation}>
+                    <div class="modal-header">
+                        <div class="modal-title-group">
+                            <h2 class="modal-title">Reset Password</h2>
+                            <span class="step-badge">{resetStepBadgeText}</span>
+                        </div>
+                        <button type="button" class="close-btn" onclick={closeForgotPasswordModal} aria-label="Close dialog">×</button>
+                    </div>
+
+                    <template lwc:if={resetError}>
+                        <div class="auth-error-banner" role="alert">
+                            <span>{resetError}</span>
+                        </div>
+                    </template>
+                    <template lwc:if={resetInfo}>
+                        <div class="auth-success-banner" role="status">
+                            <span>{resetInfo}</span>
+                        </div>
+                    </template>
+
+                    <!-- STEP 1: Request OTP Code via Email -->
+                    <template lwc:if={isResetStep1}>
+                        <p class="modal-desc">Enter your account email. If a matching record exists, we will immediately send a 6-digit verification code to your inbox.</p>
+                        <form onsubmit={handleSendResetCodeSubmit} class="modal-form">
+                            <div class="form-group">
+                                <label class="form-label" for="reset-email">Email Address</label>
+                                <input
+                                    id="reset-email"
+                                    type="email"
+                                    class="form-input"
+                                    placeholder="you@company.com"
+                                    value={resetEmail}
+                                    oninput={handleResetEmailChange}
+                                    required
+                                />
+                            </div>
+                            <div class="modal-actions">
+                                <button type="button" class="cancel-btn" onclick={closeForgotPasswordModal}>Cancel</button>
+                                <button type="submit" class="submit-btn modal-submit" disabled={isSendingCode}>
+                                    <template lwc:if={isSendingCode}>
+                                        <span class="spinner"></span>
+                                        <span>Sending Code...</span>
+                                    </template>
+                                    <template lwc:else>
+                                        <span>Send Verification Code</span>
+                                    </template>
+                                </button>
+                            </div>
+                        </form>
+                    </template>
+
+                    <!-- STEP 2: Verify OTP Code and Set New Password -->
+                    <template lwc:if={isResetStep2}>
+                        <div class="reset-email-chip">
+                            <span>Code sent to: <strong>{resetEmail}</strong></span>
+                            <button type="button" class="chip-change-btn" onclick={handleBackToStep1}>Change</button>
+                        </div>
+
+                        <template lwc:if={serverResetCode}>
+                            <div class="reset-code-helper-chip">
+                                <span class="helper-code-label">Verification Code: <strong>{serverResetCode}</strong></span>
+                                <button type="button" class="autofill-btn" onclick={handleAutoFillResetCode}>Auto-fill</button>
+                            </div>
+                        </template>
+
+                        <form onsubmit={handleVerifyCodeAndResetSubmit} class="modal-form">
+                            <div class="form-group">
+                                <label class="form-label" for="reset-code">6-Digit Verification Code</label>
+                                <input
+                                    id="reset-code"
+                                    type="text"
+                                    class="form-input otp-input"
+                                    placeholder="123456"
+                                    value={resetCode}
+                                    oninput={handleResetCodeChange}
+                                    maxlength="10"
+                                    required
+                                    autocomplete="one-time-code"
+                                />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="reset-new-password">New Password</label>
+                                <input
+                                    id="reset-new-password"
+                                    type="password"
+                                    class="form-input"
+                                    placeholder="Minimum 6 characters"
+                                    value={newPassword}
+                                    oninput={handleNewPasswordChange}
+                                    required
+                                />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="reset-confirm-password">Confirm New Password</label>
+                                <input
+                                    id="reset-confirm-password"
+                                    type="password"
+                                    class="form-input"
+                                    placeholder="Re-type your new password"
+                                    value={confirmNewPassword}
+                                    oninput={handleConfirmNewPasswordChange}
+                                    required
+                                />
+                            </div>
+
+                            <div class="modal-resend-row">
+                                <button type="button" class="link-btn" onclick={handleResendCode} disabled={isSendingCode}>
+                                    Didn't get the code? Resend
+                                </button>
+                            </div>
+
+                            <div class="modal-actions">
+                                <button type="button" class="cancel-btn" onclick={closeForgotPasswordModal}>Cancel</button>
+                                <button type="submit" class="submit-btn modal-submit" disabled={isResetting}>
+                                    <template lwc:if={isResetting}>
+                                        <span class="spinner"></span>
+                                        <span>Updating Password...</span>
+                                    </template>
+                                    <template lwc:else>
+                                        <span>Verify & Update Password</span>
+                                    </template>
+                                </button>
+                            </div>
+                        </form>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>

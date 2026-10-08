@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Can_Access_Advanced_Models__c</fullName>
+    <defaultValue>true</defaultValue>
+    <description>Controls whether the user has access to premium AI models (Opus, GPT 5, O3)</description>
+    <externalId>false</externalId>
+    <label>Can Access Advanced Models</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Chat_User__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Links the chat session to the authenticated Chat User</description>
+    <externalId>false</externalId>
+    <label>Chat User</label>
+    <referenceTo>Chat_User__c</referenceTo>
+    <relationshipLabel>GenAI Chat Sessions</relationshipLabel>
+    <relationshipName>GenAI_Chat_Sessions</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>
