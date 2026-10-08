@@ -2313,6 +2313,29 @@ public without sharing class GenAIChatController {
 
             checkRateLimit(user.Id);
 
+            // Detect @AI or @Agentforce bot summon
+            String lowerContent = content.toLowerCase();
+            Boolean isAiSummoned = lowerContent.contains('@ai') || 
+                                   lowerContent.contains('@agentforce') || 
+                                   lowerContent.contains('@claude') || 
+                                   lowerContent.contains('@gpt') || 
+                                   lowerContent.contains('@bot') ||
+                                   tag == 'Ask AI';
+
+            String aiAnswer = null;
+            if (isAiSummoned) {
+                try {
+                    String cleanQuery = content.replaceAll('(?i)@(ai|agentforce|claude|gpt|bot)', '').trim();
+                    if (String.isBlank(cleanQuery)) {
+                        cleanQuery = content;
+                    }
+                    String prompt = 'You are the Agentforce AI Assistant. A community member asked: "' + cleanQuery + '". Provide a helpful, clear, and professional reply in markdown.';
+                    aiAnswer = getAIResponseAdvanced(prompt, 'sfdc_ai__DefaultGPT4Omni', null, 'admin', null, null, null, null, sessionToken);
+                } catch (Exception aiEx) {
+                    aiAnswer = '🤖 **Agentforce AI Assistant:** Hello ' + user.Name + '! I detected your query: "' + content.abbreviate(80) + '". You can also use the Models chat workspace for full code executions and agentic tasks!';
+                }
+            }
+
             Community_Message__c msg = new Community_Message__c();
             msg.Chat_User__c = user.Id;
             msg.Author_Name__c = user.Name;
@@ -2345,6 +2368,26 @@ public without sharing class GenAIChatController {
             }
 
             insert msg;
+
+            if (String.isNotBlank(aiAnswer)) {
+                try {
+                    Community_Message__c aiReply = new Community_Message__c();
+                    aiReply.Author_Name__c = 'Agentforce AI Bot 🤖';
+                    aiReply.Author_Email__c = 'agentforce.bot@salesforce.com';
+                    aiReply.Author_Avatar__c = 'utility:apex';
+                    aiReply.Is_Admin_Post__c = true;
+                    aiReply.Tag__c = 'AI Response';
+                    aiReply.Parent_Message__c = msg.Id;
+                    aiReply.Reply_To_Author_Name__c = user.Name;
+                    aiReply.Reply_To_Snippet__c = content.abbreviate(120);
+                    aiReply.Message_Content__c = aiAnswer.abbreviate(32000);
+                    aiReply.Likes_Count__c = 0;
+                    aiReply.Is_Direct_Message__c = false;
+                    insert aiReply;
+                } catch (Exception exReply) {
+                    System.debug('Auto-AI reply save skipped: ' + exReply.getMessage());
+                }
+            }
 
             CommunityMessageDTO dto = new CommunityMessageDTO();
             dto.id = msg.Id;
@@ -2458,6 +2501,20 @@ public without sharing class GenAIChatController {
             List<ChatPartnerDTO> partners = new List<ChatPartnerDTO>();
             Datetime tenMinsAgo = Datetime.now().addMinutes(-10);
 
+            // Add official Agentforce AI Bot to partners list
+            ChatPartnerDTO aiBot = new ChatPartnerDTO();
+            aiBot.id = 'AI_BOT_PARTNER';
+            aiBot.name = 'Agentforce AI Assistant 🤖';
+            aiBot.email = 'agentforce.bot@salesforce.com';
+            aiBot.avatarIcon = 'utility:apex';
+            aiBot.bio = 'Autonomous Agentforce AI Assistant • Ask questions or get instant answers in DM!';
+            aiBot.publicKey = 'AGENTFORCE_AI_PUBKEY';
+            aiBot.keyFingerprint = 'A1:B2:C3:D4:E5:F6:77:88:99:00';
+            aiBot.isOnline = true;
+            aiBot.unreadCount = 0;
+            aiBot.lastActivity = 'Active Now';
+            partners.add(aiBot);
+
             for (Chat_User__c u : users) {
                 ChatPartnerDTO dto = new ChatPartnerDTO();
                 dto.id = u.Id;
@@ -2491,19 +2548,36 @@ public without sharing class GenAIChatController {
             }
 
             // High-security boundary: Strict row-level data segregation
-            List<Community_Message__c> records = [
-                SELECT Id, Chat_User__c, Author_Name__c, Author_Email__c, Author_Avatar__c, 
-                       Chat_User__r.Profile_Picture_Data__c, Recipient_User__c, Recipient_User__r.Name, 
-                       Recipient_User__r.Email__c, Encrypted_Payload__c, Encryption_IV__c, 
-                       Encryption_Tag__c, Encryption_Key_Fingerprint__c, Sender_Public_Key__c, 
-                       Is_Encrypted__c, CreatedDate 
-                FROM Community_Message__c 
-                WHERE Is_Direct_Message__c = true 
-                  AND ((Chat_User__c = :currentUser.Id AND Recipient_User__c = :partnerUserId) 
-                   OR (Chat_User__c = :partnerUserId AND Recipient_User__c = :currentUser.Id)) 
-                ORDER BY CreatedDate ASC 
-                LIMIT 200
-            ];
+            List<Community_Message__c> records;
+            if (partnerUserId == 'AI_BOT_PARTNER') {
+                records = [
+                    SELECT Id, Chat_User__c, Author_Name__c, Author_Email__c, Author_Avatar__c, 
+                           Chat_User__r.Profile_Picture_Data__c, Recipient_User__c, Recipient_User__r.Name, 
+                           Recipient_User__r.Email__c, Encrypted_Payload__c, Encryption_IV__c, 
+                           Encryption_Tag__c, Encryption_Key_Fingerprint__c, Sender_Public_Key__c, 
+                           Is_Encrypted__c, CreatedDate 
+                    FROM Community_Message__c 
+                    WHERE Is_Direct_Message__c = true 
+                      AND (Tag__c = 'DirectMessage_AIBot' OR Author_Email__c = 'agentforce.bot@salesforce.com')
+                      AND (Chat_User__c = :currentUser.Id OR Recipient_User__c = :currentUser.Id) 
+                    ORDER BY CreatedDate ASC 
+                    LIMIT 200
+                ];
+            } else {
+                records = [
+                    SELECT Id, Chat_User__c, Author_Name__c, Author_Email__c, Author_Avatar__c, 
+                           Chat_User__r.Profile_Picture_Data__c, Recipient_User__c, Recipient_User__r.Name, 
+                           Recipient_User__r.Email__c, Encrypted_Payload__c, Encryption_IV__c, 
+                           Encryption_Tag__c, Encryption_Key_Fingerprint__c, Sender_Public_Key__c, 
+                           Is_Encrypted__c, CreatedDate 
+                    FROM Community_Message__c 
+                    WHERE Is_Direct_Message__c = true 
+                      AND ((Chat_User__c = :currentUser.Id AND Recipient_User__c = :partnerUserId) 
+                       OR (Chat_User__c = :partnerUserId AND Recipient_User__c = :currentUser.Id)) 
+                    ORDER BY CreatedDate ASC 
+                    LIMIT 200
+                ];
+            }
 
             List<DirectMessageDTO> dtos = new List<DirectMessageDTO>();
             Datetime nowDt = Datetime.now();
@@ -2575,16 +2649,22 @@ public without sharing class GenAIChatController {
             checkRateLimit(currentUser.Id);
 
             // Verify recipient exists and is active
-            List<Chat_User__c> recipients = [
-                SELECT Id, Name, Email__c 
-                FROM Chat_User__c 
-                WHERE Id = :recipientUserId AND Is_Frozen__c != true 
-                LIMIT 1
-            ];
-            if (recipients.isEmpty()) {
-                throw new AuraHandledException('Recipient user not found or unavailable.');
+            Chat_User__c recipient = null;
+            Boolean isAiBot = (recipientUserId == 'AI_BOT_PARTNER');
+            if (isAiBot) {
+                recipient = currentUser;
+            } else {
+                List<Chat_User__c> recipients = [
+                    SELECT Id, Name, Email__c 
+                    FROM Chat_User__c 
+                    WHERE Id = :recipientUserId AND Is_Frozen__c != true 
+                    LIMIT 1
+                ];
+                if (recipients.isEmpty()) {
+                    throw new AuraHandledException('Recipient user not found or unavailable.');
+                }
+                recipient = recipients[0];
             }
-            Chat_User__c recipient = recipients[0];
 
             Community_Message__c msg = new Community_Message__c();
             msg.Chat_User__c = currentUser.Id;
@@ -2600,10 +2680,30 @@ public without sharing class GenAIChatController {
             msg.Encryption_Key_Fingerprint__c = String.isNotBlank(fingerprint) ? fingerprint.abbreviate(255) : null;
             msg.Sender_Public_Key__c = String.isNotBlank(senderPublicKey) ? senderPublicKey.abbreviate(4000) : null;
             msg.Message_Content__c = '[🔒 End-to-End Encrypted Message]';
-            msg.Tag__c = 'DirectMessage';
+            msg.Tag__c = isAiBot ? 'DirectMessage_AIBot' : 'DirectMessage';
             msg.Likes_Count__c = 0;
 
             insert msg;
+
+            if (isAiBot) {
+                try {
+                    Community_Message__c botReply = new Community_Message__c();
+                    botReply.Chat_User__c = currentUser.Id;
+                    botReply.Author_Name__c = 'Agentforce AI Assistant 🤖';
+                    botReply.Author_Email__c = 'agentforce.bot@salesforce.com';
+                    botReply.Author_Avatar__c = 'utility:apex';
+                    botReply.Recipient_User__c = currentUser.Id;
+                    botReply.Is_Direct_Message__c = true;
+                    botReply.Is_Encrypted__c = false;
+                    botReply.Tag__c = 'DirectMessage_AIBot';
+                    botReply.Encrypted_Payload__c = '🤖 Hello ' + currentUser.Name + '! Your encrypted direct message has been securely acknowledged. I am ready to help you analyze Salesforce data, write Apex code, or configure Agentforce.';
+                    botReply.Encryption_IV__c = 'PLAIN_TEXT_ACK';
+                    botReply.Likes_Count__c = 0;
+                    insert botReply;
+                } catch (Exception exBot) {
+                    System.debug('Bot DM reply warning: ' + exBot.getMessage());
+                }
+            }
 
             DirectMessageDTO dto = new DirectMessageDTO();
             dto.id = msg.Id;

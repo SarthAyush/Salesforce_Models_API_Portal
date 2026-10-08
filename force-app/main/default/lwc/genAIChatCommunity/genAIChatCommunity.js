@@ -65,6 +65,19 @@ export default class GenAIChatCommunity extends LightningElement {
     @track cryptoAuditData = {};
     @track isE2EEReady = false;
 
+    // Live Voice Typing & Real-time Transcription State
+    @track isVoiceTypingCommunity = false;
+    @track liveVoiceTranscriptCommunity = '';
+    @track isVoiceTypingDm = false;
+    @track liveVoiceTranscriptDm = '';
+    @track isEphemeralMode = false;
+    voiceRecognitionCommunity = null;
+    voiceRecognitionDm = null;
+    voiceBaseCommunityDraft = '';
+    voiceBaseDmDraft = '';
+    voiceAccumulatedCommunity = '';
+    voiceAccumulatedDm = '';
+
     // Cryptographic Session Keys (In-Memory)
     myPrivateKey = null;
     myPublicKey = null;
@@ -150,6 +163,30 @@ export default class GenAIChatCommunity extends LightningElement {
             label: t === 'All' ? 'All Discussions' : t,
             cssClass: this.selectedTag === t ? 'filter-pill active' : 'filter-pill'
         }));
+    }
+
+    get communityMicButtonClass() {
+        return `community-mic-btn ${this.isVoiceTypingCommunity ? 'active-listening' : ''}`;
+    }
+
+    get communityMicButtonTitle() {
+        return this.isVoiceTypingCommunity ? 'Stop voice typing' : 'Voice Typing (Speech to text)';
+    }
+
+    get dmMicButtonClass() {
+        return `dm-mic-btn ${this.isVoiceTypingDm ? 'active-listening' : ''}`;
+    }
+
+    get dmMicButtonTitle() {
+        return this.isVoiceTypingDm ? 'Stop voice typing' : 'Voice Typing (Speech to text)';
+    }
+
+    get ephemeralToggleClass() {
+        return `ephemeral-toggle-btn ${this.isEphemeralMode ? 'active-ephemeral' : ''}`;
+    }
+
+    get ephemeralToggleLabel() {
+        return this.isEphemeralMode ? 'Ephemeral Active (24h)' : '24h Auto-Expire';
     }
 
     // ----------------------------------------------------
@@ -644,6 +681,194 @@ export default class GenAIChatCommunity extends LightningElement {
         }
     }
 
+    handleEmojiReaction(event) {
+        const msgId = event.currentTarget.dataset.id;
+        const emoji = event.currentTarget.dataset.emoji;
+        if (!msgId) return;
+
+        this.messages = this.messages.map((m) => {
+            if (m.id === msgId) {
+                const newLikes = (m.likesCount || 0) + 1;
+                return { ...m, likesCount: newLikes };
+            }
+            return m;
+        });
+
+        likeCommunityMessage({ sessionToken: this.sessionToken, messageId: msgId }).catch(() => {});
+        this.showToast('Reaction Added', `${emoji} reaction saved!`, 'success');
+    }
+
+    handleToggleEphemeralMode() {
+        this.isEphemeralMode = !this.isEphemeralMode;
+        if (this.isEphemeralMode) {
+            this.showToast('Ephemeral Mode Active', 'Messages will be flagged for 24-hour expiration.', 'info');
+        } else {
+            this.showToast('Standard Mode', 'Ephemeral mode turned off.', 'info');
+        }
+    }
+
+    // ----------------------------------------------------
+    // SPEECH RECOGNITION (COMMUNITY POST VOICE TYPING)
+    // ----------------------------------------------------
+    initCommunitySpeechRecognition() {
+        const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechClass) {
+            this.voiceRecognitionCommunity = new SpeechClass();
+            this.voiceRecognitionCommunity.continuous = true;
+            this.voiceRecognitionCommunity.interimResults = true;
+            this.voiceRecognitionCommunity.lang = 'en-US';
+
+            this.voiceRecognitionCommunity.onresult = (event) => {
+                let interim = '';
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const piece = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += piece + ' ';
+                    } else {
+                        interim += piece;
+                    }
+                }
+                if (finalTranscript) {
+                    this.voiceAccumulatedCommunity = (this.voiceAccumulatedCommunity || '') + finalTranscript;
+                }
+                const combined = ((this.voiceAccumulatedCommunity || '') + interim).trim();
+                this.liveVoiceTranscriptCommunity = combined;
+                const prefix = this.voiceBaseCommunityDraft ? this.voiceBaseCommunityDraft.trim() + ' ' : '';
+                this.newPostContent = prefix + combined;
+            };
+
+            this.voiceRecognitionCommunity.onerror = () => {
+                this.isVoiceTypingCommunity = false;
+            };
+
+            this.voiceRecognitionCommunity.onend = () => {
+                if (this.isVoiceTypingCommunity) {
+                    try {
+                        this.voiceRecognitionCommunity.start();
+                    } catch (e) {
+                        this.isVoiceTypingCommunity = false;
+                    }
+                }
+            };
+        }
+    }
+
+    handleToggleCommunityVoiceRecognition() {
+        if (!this.voiceRecognitionCommunity) {
+            this.initCommunitySpeechRecognition();
+        }
+        if (!this.voiceRecognitionCommunity) {
+            this.showToast('Voice Input', 'Speech recognition is not supported in this browser.', 'info');
+            return;
+        }
+
+        if (this.isVoiceTypingCommunity) {
+            this.handleFinishCommunityVoiceInput();
+        } else {
+            this.voiceBaseCommunityDraft = this.newPostContent || '';
+            this.voiceAccumulatedCommunity = '';
+            this.liveVoiceTranscriptCommunity = '';
+            this.isVoiceTypingCommunity = true;
+            try {
+                this.voiceRecognitionCommunity.start();
+                this.showToast('Voice Typing Active', 'Speak now — live transcription will stream into the post.', 'info');
+            } catch (e) {
+                this.isVoiceTypingCommunity = false;
+            }
+        }
+    }
+
+    handleFinishCommunityVoiceInput() {
+        this.isVoiceTypingCommunity = false;
+        if (this.voiceRecognitionCommunity) {
+            try {
+                this.voiceRecognitionCommunity.stop();
+            } catch (e) {}
+        }
+    }
+
+    // ----------------------------------------------------
+    // SPEECH RECOGNITION (DM VOICE TYPING)
+    // ----------------------------------------------------
+    initDmSpeechRecognition() {
+        const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechClass) {
+            this.voiceRecognitionDm = new SpeechClass();
+            this.voiceRecognitionDm.continuous = true;
+            this.voiceRecognitionDm.interimResults = true;
+            this.voiceRecognitionDm.lang = 'en-US';
+
+            this.voiceRecognitionDm.onresult = (event) => {
+                let interim = '';
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const piece = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += piece + ' ';
+                    } else {
+                        interim += piece;
+                    }
+                }
+                if (finalTranscript) {
+                    this.voiceAccumulatedDm = (this.voiceAccumulatedDm || '') + finalTranscript;
+                }
+                const combined = ((this.voiceAccumulatedDm || '') + interim).trim();
+                this.liveVoiceTranscriptDm = combined;
+                const prefix = this.voiceBaseDmDraft ? this.voiceBaseDmDraft.trim() + ' ' : '';
+                this.dmDraft = prefix + combined;
+            };
+
+            this.voiceRecognitionDm.onerror = () => {
+                this.isVoiceTypingDm = false;
+            };
+
+            this.voiceRecognitionDm.onend = () => {
+                if (this.isVoiceTypingDm) {
+                    try {
+                        this.voiceRecognitionDm.start();
+                    } catch (e) {
+                        this.isVoiceTypingDm = false;
+                    }
+                }
+            };
+        }
+    }
+
+    handleToggleDmVoiceRecognition() {
+        if (!this.voiceRecognitionDm) {
+            this.initDmSpeechRecognition();
+        }
+        if (!this.voiceRecognitionDm) {
+            this.showToast('Voice Input', 'Speech recognition is not supported in this browser.', 'info');
+            return;
+        }
+
+        if (this.isVoiceTypingDm) {
+            this.handleFinishDmVoiceInput();
+        } else {
+            this.voiceBaseDmDraft = this.dmDraft || '';
+            this.voiceAccumulatedDm = '';
+            this.liveVoiceTranscriptDm = '';
+            this.isVoiceTypingDm = true;
+            try {
+                this.voiceRecognitionDm.start();
+                this.showToast('Voice Typing Active', 'Speak now — live transcription will stream into the message.', 'info');
+            } catch (e) {
+                this.isVoiceTypingDm = false;
+            }
+        }
+    }
+
+    handleFinishDmVoiceInput() {
+        this.isVoiceTypingDm = false;
+        if (this.voiceRecognitionDm) {
+            try {
+                this.voiceRecognitionDm.stop();
+            } catch (e) {}
+        }
+    }
+
     // ----------------------------------------------------
     // PERSONAL MESSAGES (DIRECT MESSAGING WITH E2EE)
     // ----------------------------------------------------
@@ -834,7 +1059,10 @@ export default class GenAIChatCommunity extends LightningElement {
     async handleSendDirectMessage() {
         if (!this.dmDraft || !this.dmDraft.trim() || !this.selectedPartner || this.isSendingDm) return;
 
-        const plaintext = this.dmDraft.trim();
+        let plaintext = this.dmDraft.trim();
+        if (this.isEphemeralMode) {
+            plaintext = '[⏳ Ephemeral: 24h] ' + plaintext;
+        }
         this.isSendingDm = true;
         this.dmDraft = '';
 

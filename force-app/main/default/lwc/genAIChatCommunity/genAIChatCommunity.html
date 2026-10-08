@@ -114,6 +114,7 @@
                                 <label class="tag-label" for="composer-tag-select">Category:</label>
                                 <select id="composer-tag-select" class="tag-select-input" onchange={handleComposerTagChange}>
                                     <option value="General">General</option>
+                                    <option value="Ask AI">🤖 Ask AI (@AI)</option>
                                     <option value="Prompt Share">Prompt Share</option>
                                     <option value="Question">Question</option>
                                     <option value="Announcement">Announcement</option>
@@ -122,6 +123,27 @@
                         </div>
 
                         <div class="composer-body">
+                            <!-- LIVE TRANSCRIBE HUD BANNER FOR COMMUNITY POST -->
+                            <template if:true={isVoiceTypingCommunity}>
+                                <div class="live-transcribe-dock-hud community-voice-hud">
+                                    <div class="hud-left">
+                                        <span class="hud-pulse-dot"></span>
+                                        <span class="hud-label">Voice Transcribing:</span>
+                                    </div>
+                                    <div class="hud-stream-preview">
+                                        <template if:true={liveVoiceTranscriptCommunity}>
+                                            <span class="hud-text">"{liveVoiceTranscriptCommunity}"</span>
+                                        </template>
+                                        <template if:false={liveVoiceTranscriptCommunity}>
+                                            <span class="hud-hint">Listening to microphone... speak now</span>
+                                        </template>
+                                    </div>
+                                    <button class="hud-done-action" onclick={handleFinishCommunityVoiceInput}>
+                                        Done
+                                    </button>
+                                </div>
+                            </template>
+
                             <textarea 
                                 class="composer-textarea" 
                                 rows="3" 
@@ -133,21 +155,35 @@
 
                         <div class="composer-footer">
                             <div class="composer-tip">
-                                <span>Markdown & code blocks (```) supported</span>
+                                <span>Markdown & code blocks (```) supported • Tip: Tag <b>@AI</b> to summon Agentforce Bot</span>
                             </div>
-                            <button 
-                                class="publish-btn" 
-                                disabled={isPublishDisabled} 
-                                onclick={handlePublishPost}>
-                                <template if:true={isPublishing}>
-                                    <span class="btn-spinner"></span>
-                                    <span>Posting...</span>
-                                </template>
-                                <template if:false={isPublishing}>
-                                    <lightning-icon icon-name="utility:send" size="xx-small" class="publish-icon"></lightning-icon>
-                                    <span>{publishButtonLabel}</span>
-                                </template>
-                            </button>
+                            <div class="composer-footer-actions">
+                                <!-- Voice Input Microphone Button -->
+                                <button 
+                                    class={communityMicButtonClass} 
+                                    onclick={handleToggleCommunityVoiceRecognition} 
+                                    title={communityMicButtonTitle}>
+                                    <template if:true={isVoiceTypingCommunity}>
+                                        <span class="mic-pulse-ring"></span>
+                                    </template>
+                                    <lightning-icon icon-name="utility:unmuted" size="xx-small" class="mic-btn-icon"></lightning-icon>
+                                    <span>Voice</span>
+                                </button>
+
+                                <button 
+                                    class="publish-btn" 
+                                    disabled={isPublishDisabled} 
+                                    onclick={handlePublishPost}>
+                                    <template if:true={isPublishing}>
+                                        <span class="btn-spinner"></span>
+                                        <span>Posting...</span>
+                                    </template>
+                                    <template if:false={isPublishing}>
+                                        <lightning-icon icon-name="utility:send" size="xx-small" class="publish-icon"></lightning-icon>
+                                        <span>{publishButtonLabel}</span>
+                                    </template>
+                                </button>
+                            </div>
                         </div>
                     </section>
                 </template>
@@ -229,6 +265,16 @@
                                                     <lightning-icon icon-name="utility:like" size="xx-small" class="like-icon"></lightning-icon>
                                                     <span class="likes-count">{msg.likesCount}</span>
                                                 </button>
+
+                                                <!-- QUICK EMOJI REACTIONS BAR -->
+                                                <div class="quick-reactions-strip">
+                                                    <button class="reaction-pill-btn" data-id={msg.id} data-emoji="👍" onclick={handleEmojiReaction} title="Thumbs Up">👍</button>
+                                                    <button class="reaction-pill-btn" data-id={msg.id} data-emoji="❤️" onclick={handleEmojiReaction} title="Heart">❤️</button>
+                                                    <button class="reaction-pill-btn" data-id={msg.id} data-emoji="🔥" onclick={handleEmojiReaction} title="Fire">🔥</button>
+                                                    <button class="reaction-pill-btn" data-id={msg.id} data-emoji="🚀" onclick={handleEmojiReaction} title="Rocket">🚀</button>
+                                                    <button class="reaction-pill-btn" data-id={msg.id} data-emoji="💡" onclick={handleEmojiReaction} title="Idea">💡</button>
+                                                    <button class="reaction-pill-btn" data-id={msg.id} data-emoji="🎉" onclick={handleEmojiReaction} title="Celebrate">🎉</button>
+                                                </div>
 
                                                 <!-- REPLY & THREAD TOGGLE BUTTON -->
                                                 <button 
@@ -520,6 +566,9 @@
                                                 <div class="dm-bubble-meta">
                                                     <span class="dm-time">{dm.timeAgo}</span>
                                                     <span class="dm-lock-badge" title="Authenticated AES-GCM Encrypted">🔒</span>
+                                                    <template if:true={dm.isSender}>
+                                                        <span class="dm-status-ticks" title="End-to-End Encrypted & Verified">✓✓</span>
+                                                    </template>
                                                     <template if:true={dm.canDelete}>
                                                         <button 
                                                             class="dm-delete-btn" 
@@ -547,6 +596,27 @@
 
                         <!-- ENCRYPTED MESSAGE COMPOSER -->
                         <footer class="dm-composer-bar">
+                            <!-- LIVE TRANSCRIBE HUD BANNER FOR DM -->
+                            <template if:true={isVoiceTypingDm}>
+                                <div class="live-transcribe-dock-hud dm-voice-hud">
+                                    <div class="hud-left">
+                                        <span class="hud-pulse-dot"></span>
+                                        <span class="hud-label">DM Voice Transcribing:</span>
+                                    </div>
+                                    <div class="hud-stream-preview">
+                                        <template if:true={liveVoiceTranscriptDm}>
+                                            <span class="hud-text">"{liveVoiceTranscriptDm}"</span>
+                                        </template>
+                                        <template if:false={liveVoiceTranscriptDm}>
+                                            <span class="hud-hint">Listening to microphone... speak now</span>
+                                        </template>
+                                    </div>
+                                    <button class="hud-done-action" onclick={handleFinishDmVoiceInput}>
+                                        Done
+                                    </button>
+                                </div>
+                            </template>
+
                             <div class="dm-input-wrapper">
                                 <textarea 
                                     class="dm-textarea" 
@@ -556,6 +626,18 @@
                                     oninput={handleDmDraftChange} 
                                     onkeypress={handleDmKeyPress}>
                                 </textarea>
+                                
+                                <!-- Voice Input Microphone Button for DM -->
+                                <button 
+                                    class={dmMicButtonClass} 
+                                    onclick={handleToggleDmVoiceRecognition} 
+                                    title={dmMicButtonTitle}>
+                                    <template if:true={isVoiceTypingDm}>
+                                        <span class="mic-pulse-ring"></span>
+                                    </template>
+                                    <lightning-icon icon-name="utility:unmuted" size="xx-small" class="dm-mic-icon"></lightning-icon>
+                                </button>
+
                                 <button 
                                     class="dm-send-btn" 
                                     disabled={isDmSendDisabled} 
@@ -570,8 +652,17 @@
                                 </button>
                             </div>
                             <div class="dm-composer-guarantee">
-                                <span class="lock-dot">🔒</span>
-                                <span>Zero-knowledge: Encrypted in browser using AES-GCM-256 before transmission.</span>
+                                <div class="guarantee-left">
+                                    <span class="lock-dot">🔒</span>
+                                    <span>Zero-knowledge: Encrypted with AES-GCM-256 before transmission.</span>
+                                </div>
+                                <!-- Ephemeral 24h toggle -->
+                                <button 
+                                    class={ephemeralToggleClass} 
+                                    onclick={handleToggleEphemeralMode} 
+                                    title="Toggle 24-hour self-destructing message mode">
+                                    <span>⏳ {ephemeralToggleLabel}</span>
+                                </button>
                             </div>
                         </footer>
                     </template>

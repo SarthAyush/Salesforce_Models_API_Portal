@@ -790,6 +790,15 @@ private class GenAIChatControllerTest {
         List<GenAIChatController.CommunityMessageDTO> threadReplies = GenAIChatController.getCommunityMessageReplies(token, rootPost.id);
         System.assert(threadReplies.size() >= 2, 'Should return at least 2 replies for the thread');
 
+        // 5. Test @AI summon detection and automated threaded reply
+        GenAIChatController.CommunityMessageDTO aiSummonMsg = GenAIChatController.postCommunityMessage(
+            token,
+            'Hello @AI what is the recommended architecture for high volume messaging?',
+            'Question',
+            null
+        );
+        System.assertNotEquals(null, aiSummonMsg, 'AI summon post should be created');
+
         Test.stopTest();
     }
 
@@ -890,6 +899,20 @@ private class GenAIChatControllerTest {
         // 7. Delete Direct Message
         Boolean deleted = GenAIChatController.deleteDirectMessage(aliceToken, sentDm.id);
         System.assertEquals(true, deleted, 'Alice should be able to delete her sent message');
+
+        // 8. Test Direct Messaging with AI Bot Partner
+        GenAIChatController.DirectMessageDTO aiBotDm = GenAIChatController.sendDirectMessage(
+            aliceToken,
+            'AI_BOT_PARTNER',
+            'SGVsbG8gQUkgQXNzaXN0YW50',
+            'MTIzNDU2Nzg5MDEy',
+            'VEFHX0RBVEE=',
+            'FINGERPRINT_123',
+            alicePubKey
+        );
+        System.assertNotEquals(null, aiBotDm, 'AI bot direct message should be created');
+        List<GenAIChatController.DirectMessageDTO> aiDms = GenAIChatController.getDirectMessages(aliceToken, 'AI_BOT_PARTNER');
+        System.assert(aiDms.size() >= 1, 'Should retrieve at least 1 message in AI bot chat');
 
         Test.stopTest();
     }

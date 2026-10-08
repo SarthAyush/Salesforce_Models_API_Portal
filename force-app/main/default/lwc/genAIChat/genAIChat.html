@@ -1187,6 +1187,50 @@
                                 </div>
                             </div>
                         </template>
+
+                        <!-- LIVE VOICE TRANSCRIBE IN CHAT STREAM (REAL-TIME STREAMING) -->
+                        <template if:true={isListening}>
+                            <div class="message-row user-row live-voice-stream-row">
+                                <div class="user-avatar-circle voice-avatar-pulsing" title="Live Voice Streaming">
+                                    <lightning-icon icon-name="utility:unmuted" size="x-small" class="voice-avatar-icon"></lightning-icon>
+                                </div>
+                                <div class="bubble-stack">
+                                    <div class="chat-bubble user-bubble live-voice-bubble">
+                                        <div class="live-voice-header">
+                                            <div class="live-badge-group">
+                                                <span class="live-rec-dot"></span>
+                                                <span class="live-rec-text">LIVE VOICE TRANSCRIBING</span>
+                                            </div>
+                                            <div class="sound-equalizer">
+                                                <span class="eq-bar bar1"></span>
+                                                <span class="eq-bar bar2"></span>
+                                                <span class="eq-bar bar3"></span>
+                                                <span class="eq-bar bar4"></span>
+                                                <span class="eq-bar bar5"></span>
+                                            </div>
+                                        </div>
+                                        <div class="live-voice-body">
+                                            <template if:true={liveVoiceTranscript}>
+                                                <p class="live-voice-text">{liveVoiceTranscript}<span class="typing-cursor">|</span></p>
+                                            </template>
+                                            <template if:false={liveVoiceTranscript}>
+                                                <p class="live-voice-placeholder">🎙️ Listening... speak now to see live transcription...</p>
+                                            </template>
+                                        </div>
+                                        <div class="live-voice-footer">
+                                            <button class="voice-pill-btn done-pill" onclick={handleFinishVoiceInput} title="Finish voice typing and insert">
+                                                <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                                                <span>Done Speaking</span>
+                                            </button>
+                                            <button class="voice-pill-btn cancel-pill" onclick={handleCancelVoiceInput} title="Cancel voice typing">
+                                                <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                                                <span>Cancel</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </template>
 
@@ -1201,6 +1245,27 @@
 
             <!-- CHAT INPUT DOCK (Streamlined Input, No File Uploads) -->
             <footer class="chat-input-dock">
+                <!-- LIVE TRANSCRIBE DOCK HUD BANNER -->
+                <template if:true={isListening}>
+                    <div class="live-transcribe-dock-hud">
+                        <div class="hud-left">
+                            <span class="hud-pulse-dot"></span>
+                            <span class="hud-label">Live Voice Transcribing:</span>
+                        </div>
+                        <div class="hud-stream-preview">
+                            <template if:true={liveVoiceTranscript}>
+                                <span class="hud-text">"{liveVoiceTranscript}"</span>
+                            </template>
+                            <template if:false={liveVoiceTranscript}>
+                                <span class="hud-hint">Listening to microphone...</span>
+                            </template>
+                        </div>
+                        <button class="hud-done-action" onclick={handleFinishVoiceInput}>
+                            Done
+                        </button>
+                    </div>
+                </template>
+
                 <div class="input-card">
                     <textarea
                         class="native-chat-textarea"

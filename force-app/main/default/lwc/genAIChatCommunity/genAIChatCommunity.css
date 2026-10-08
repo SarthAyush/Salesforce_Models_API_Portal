@@ -1814,3 +1814,236 @@
 .dark-theme .spec-value {
     color: #f1f5f9;
 }
+
+/* ==================================================== */
+/* QUICK EMOJI REACTIONS BAR                            */
+/* ==================================================== */
+.quick-reactions-strip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 14px;
+    margin-left: 6px;
+}
+
+.dark-theme .quick-reactions-strip {
+    background: #1e293b;
+    border: 1px solid #334155;
+}
+
+.reaction-pill-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 3px;
+    border-radius: 6px;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.reaction-pill-btn:hover {
+    transform: scale(1.3);
+    background: rgba(99, 102, 241, 0.15);
+}
+
+/* ==================================================== */
+/* COMMUNITY & DM VOICE TYPING STYLES                   */
+/* ==================================================== */
+.community-mic-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+    padding: 0.4rem 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.community-mic-btn:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.community-mic-btn.active-listening,
+.dm-mic-btn.active-listening {
+    background: #fef2f2 !important;
+    border-color: #f87171 !important;
+    color: #ef4444 !important;
+}
+
+.dm-mic-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dm-mic-btn:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.mic-pulse-ring {
+    position: absolute;
+    top: -3px; left: -3px; right: -3px; bottom: -3px;
+    border-radius: 8px;
+    border: 2px solid #ef4444;
+    animation: micRipple 1.2s infinite ease-out;
+}
+
+/* LIVE TRANSCRIBE HUD IN COMMUNITY */
+.live-transcribe-dock-hud {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, #fef2f2 0%, #fff1f2 100%);
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    animation: fadeIn 0.25s ease;
+}
+
+.dark-theme .live-transcribe-dock-hud {
+    background: #2a1215;
+    border-color: #7f1d1d;
+}
+
+.hud-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.hud-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: liveDotBlink 0.9s infinite alternate;
+}
+
+.hud-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #dc2626;
+}
+
+.dark-theme .hud-label {
+    color: #f87171;
+}
+
+.hud-stream-preview {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12.5px;
+}
+
+.hud-text {
+    color: #0f172a;
+    font-weight: 500;
+}
+
+.dark-theme .hud-text {
+    color: #f1f5f9;
+}
+
+.hud-hint {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.hud-done-action {
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+    border: none;
+    padding: 3px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.hud-done-action:hover {
+    background: #dc2626;
+}
+
+/* ==================================================== */
+/* READ RECEIPTS & DELIVERY STATUS TICKS                */
+/* ==================================================== */
+.dm-status-ticks {
+    font-size: 11px;
+    font-weight: 700;
+    color: #38bdf8;
+    letter-spacing: -1.5px;
+    margin-left: 3px;
+}
+
+/* ==================================================== */
+/* EPHEMERAL MESSAGE TOGGLE BUTTON                      */
+/* ==================================================== */
+.dm-composer-guarantee {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.guarantee-left {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.ephemeral-toggle-btn {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ephemeral-toggle-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.ephemeral-toggle-btn.active-ephemeral {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #b45309;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+
+@keyframes liveDotBlink {
+    0% { opacity: 0.3; transform: scale(0.85); }
+    100% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes micRipple {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.5); opacity: 0; }
+}

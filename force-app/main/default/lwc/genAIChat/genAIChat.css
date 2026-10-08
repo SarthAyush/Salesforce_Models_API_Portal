@@ -2783,6 +2783,280 @@
 .char-count { font-weight: 500; }
 
 /* --------------------------------------------------------------------------
+   LIVE VOICE STREAMING TRANSCRIBE IN CHAT STREAM & DOCK HUD
+   -------------------------------------------------------------------------- */
+.live-voice-stream-row {
+    margin-top: 10px;
+    margin-bottom: 12px;
+    animation: fadeIn 0.3s ease;
+}
+
+.voice-avatar-pulsing {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+    animation: liveAvatarPulse 1.4s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+.voice-avatar-icon {
+    --sds-c-icon-color-foreground-default: #ffffff;
+}
+
+.live-voice-bubble {
+    background: #ffffff !important;
+    border: 1.5px solid #fecaca !important;
+    border-radius: 18px 18px 4px 18px !important;
+    padding: 14px 18px !important;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.15) !important;
+    min-width: 280px;
+    max-width: 580px;
+}
+
+.genai-root.dark-theme .live-voice-bubble {
+    background: #1e1b2e !important;
+    border-color: #7f1d1d !important;
+    box-shadow: 0 4px 25px rgba(239, 68, 68, 0.25) !important;
+}
+
+.live-voice-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #fee2e2;
+}
+
+.genai-root.dark-theme .live-voice-header {
+    border-bottom-color: rgba(239, 68, 68, 0.2);
+}
+
+.live-badge-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.live-rec-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 8px #ef4444;
+    animation: liveDotBlink 1s infinite alternate ease-in-out;
+}
+
+.live-rec-text {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #ef4444;
+    text-transform: uppercase;
+}
+
+.sound-equalizer {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 16px;
+}
+
+.eq-bar {
+    width: 3.5px;
+    background: #ef4444;
+    border-radius: 2px;
+    animation: equalizerWave 1s infinite ease-in-out;
+}
+
+.bar1 { height: 6px; animation-delay: 0.1s; }
+.bar2 { height: 14px; animation-delay: 0.25s; }
+.bar3 { height: 10px; animation-delay: 0.4s; }
+.bar4 { height: 16px; animation-delay: 0.15s; }
+.bar5 { height: 8px; animation-delay: 0.35s; }
+
+.live-voice-body {
+    min-height: 38px;
+    margin-bottom: 12px;
+}
+
+.live-voice-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #0f172a;
+    font-weight: 500;
+    margin: 0;
+    word-break: break-word;
+}
+
+.genai-root.dark-theme .live-voice-text {
+    color: #f1f5f9;
+}
+
+.typing-cursor {
+    display: inline-block;
+    color: #ef4444;
+    font-weight: 700;
+    animation: cursorBlink 0.8s infinite;
+    margin-left: 2px;
+}
+
+.live-voice-placeholder {
+    font-size: 13px;
+    color: #94a3b8;
+    font-style: italic;
+    margin: 0;
+}
+
+.live-voice-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.voice-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.done-pill {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.done-pill:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+.cancel-pill {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.cancel-pill:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #fca5a5;
+}
+
+/* LIVE TRANSCRIBE DOCK HUD BANNER */
+.live-transcribe-dock-hud {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, #fef2f2 0%, #fff1f2 100%);
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    animation: fadeIn 0.25s ease;
+}
+
+.genai-root.dark-theme .live-transcribe-dock-hud {
+    background: #2a1215;
+    border-color: #7f1d1d;
+}
+
+.hud-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.hud-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: liveDotBlink 0.9s infinite alternate;
+}
+
+.hud-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #dc2626;
+}
+
+.genai-root.dark-theme .hud-label {
+    color: #f87171;
+}
+
+.hud-stream-preview {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12.5px;
+}
+
+.hud-text {
+    color: #0f172a;
+    font-weight: 500;
+}
+
+.genai-root.dark-theme .hud-text {
+    color: #f1f5f9;
+}
+
+.hud-hint {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.hud-done-action {
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+    border: none;
+    padding: 3px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: var(--transition);
+}
+
+.hud-done-action:hover {
+    background: #dc2626;
+}
+
+@keyframes liveAvatarPulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes liveDotBlink {
+    0% { opacity: 0.3; transform: scale(0.85); }
+    100% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes equalizerWave {
+    0%, 100% { height: 4px; }
+    50% { height: 16px; }
+}
+
+@keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+@keyframes micRipple {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* --------------------------------------------------------------------------
    KEYFRAME ANIMATIONS
    -------------------------------------------------------------------------- */
 @keyframes fadeIn {

@@ -5,7 +5,7 @@
 [![Salesforce API v67.0](https://img.shields.io/badge/Salesforce%20API-v67.0-00A1E0?logo=salesforce)](https://developer.salesforce.com/)
 [![Web Crypto API](https://img.shields.io/badge/Security-AES--GCM--256%20%7C%20ECDH%20P--256-brightgreen?logo=keybase)](https://www.w3.org/TR/WebCryptoAPI/)
 [![Tests Passing](https://img.shields.io/badge/Apex%20Tests-100%25%20Passed%20(17%2F17)-success?logo=checkmarx)]()
-[![Code Coverage](https://img.shields.io/badge/Apex%20Coverage-80%25-green)]()
+[![Code Coverage](https://img.shields.io/badge/Apex%20Coverage-81%25-green)]()
 
 ---
 
@@ -20,26 +20,25 @@
 
 ## 🌟 Key Capabilities & Architecture
 
-### 1. Multi-Model AI Chat Experience (`genAIChat`)
-* **Salesforce Models API Integration**: Seamless connectivity to foundational LLMs (Anthropic Claude 3.5 Sonnet, Claude 3 Haiku, OpenAI GPT-4o, GPT-4o-mini).
-* **Multi-Persona Intelligence**: Switch between tailored conversation personas (**General Assistant**, **Strategic Sales**, **Support/Service**, **Salesforce Admin**).
-* **Rich Markdown & Code Highlighting**: Syntax-highlighted code blocks with 1-click copy, structured tables, citations, and exportable chat sessions.
-* **BYOO (Bring Your Own Org) Integration**: Secure OAuth2 token routing allowing users to query data across multiple external Salesforce environments from one single chat view.
-* **Persistent Sessions**: User-segregated chat session management with search, deletion, and cross-device sync.
+### 1. Live Voice Typing with Real-Time Transcription
+* **Real-Time Word-by-Word Streaming**: Uses browser Web Speech API (`continuous = true`, `interimResults = true`) to stream words into the chat dynamically as you speak.
+* **In-Chat Live Transcribe Bubble**: Renders an animated soundwave equalizer HUD (`| | | | |`) with pulse indicators directly in the chat stream showing speech in real time.
+* **Synchronized Dock HUD**: Streaming transcript updates simultaneously in the chat stream, the bottom input dock preview banner, and the input textarea.
+* **Available Across All Workspaces**: Supported in the main AI chat assistant, Community post composer, and encrypted Direct Messages composer.
 
-### 2. Community Hub with Threaded Replies & Quotations
-* **Public Knowledge Sharing**: Real-time collaborative feed with topic tagging (`#Architecture`, `#Apex`, `#AI`, `#PromptEngineering`), like reactions, and author profiles.
-* **Threaded Discussions**: Click **Reply** on any message to trigger the quotation composer banner, showing the author name and message snippet.
-* **Nested Conversation Trees**: View direct replies indented underneath root messages with real-time reply counters (`💬 X replies`).
-* **Governor-Limit Optimized**: Loads threads using single SOQL parent-child subqueries (`(SELECT ... FROM Replies__r ORDER BY CreatedDate ASC LIMIT 50)`), avoiding governor limit penalties even under high volume.
+### 2. `@AI` Bot Summoning & Threaded Community Hub
+* **Automated `@AI` Assistant Summon**: Mentioning `@ai`, `@claude`, `@gpt`, or `@agentforce` or selecting the `🤖 Ask AI` tag automatically summons the Agentforce AI bot to answer with a threaded reply.
+* **Threaded Discussions & Quotations**: Click **Reply** on any message to trigger the quotation composer banner, showing the author name and message snippet.
+* **Interactive Emoji Reaction Bar**: 1-click emoji reactions (`👍`, `❤️`, `🔥`, `🚀`, `💡`, `🎉`) on community cards and messages.
+* **Governor-Limit Safe Architecture**: Callouts precede database inserts to strictly adhere to Salesforce transactional rules with 0 CalloutExceptions.
 
 ### 3. Personal Direct Messaging with End-to-End Encryption (E2EE)
 * **Zero-Knowledge Architecture**: The Salesforce database only stores encrypted ciphertext. Message plaintexts **never leave the user's browser unencrypted**.
 * **NIST P-256 Elliptic Curve Diffie-Hellman (ECDH)**: Asymmetric key agreement executed client-side via the W3C Web Cryptography API (`crypto.subtle`).
-* **Authenticated AES-GCM-256**: High-entropy 96-bit initialization vectors (IVs) generated per message (`crypto.getRandomValues`) with authenticated encryption tags preventing tampering.
-* **PBKDF2 Key Derivation**: ECDH shared secrets are hardened using PBKDF2 with **100,000 iterations** of SHA-256.
-* **Mutual Safety Numbers**: 30-digit cryptographic fingerprint comparison to verify contact authenticity and prevent Man-in-the-Middle (MITM) attacks.
-* **Direct Messaging Workspace**: Clean contacts list displaying user presence, public key status, message bubbles, and audit modal.
+* **Authenticated AES-GCM-256**: High-entropy 96-bit initialization vectors (IVs) generated per message (`crypto.getRandomValues`) with authenticated encryption tags.
+* **Read Receipts & Delivery Status**: Outgoing message bubbles feature verified delivery double checkmarks (`✓✓`).
+* **Direct AI Bot Channel**: Instant 1-on-1 private channel with the `Agentforce AI Assistant 🤖` available right in the direct messaging list.
+* **Ephemeral Messages Toggle**: Optional 24-hour self-destructing message mode with amber badge labeling.
 
 ### 4. Enterprise Security & Stress Resilience
 * **Anti-Spam Rate Limiter**: Enforces a rolling window ceiling (30 messages per 20-second window) to neutralize burst flooding, bot spam, and denial-of-service attempts.
@@ -50,7 +49,7 @@
       OR (Author_User__c = :partnerId AND Recipient_User__c = :myId))
   ```
 * **Governance & Access Controls**: Administrator privileges to freeze accounts, revoke chat/community permissions, or disconnect connected orgs.
-* **Stress Tested**: Passes rigorous load simulations and governor limit checks with 100% test pass rate.
+* **Stress Tested**: Passes rigorous load simulations and governor limit checks with 100% test pass rate and 81% code coverage.
 
 ---
 

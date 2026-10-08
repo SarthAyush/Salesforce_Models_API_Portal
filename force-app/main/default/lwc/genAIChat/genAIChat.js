@@ -148,11 +148,14 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
 
     // UI Interactive States
     @track isListening = false;
+    @track liveVoiceTranscript = '';
     @track speakingMsgId = null;
     @track showScrollBottom = false;
 
     msgId = 0;
     speechRecognition = null;
+    voiceBaseInput = '';
+    voiceAccumulatedText = '';
 
     modelOptions = [
         { label: 'GPT 4 Omni', value: 'sfdc_ai__DefaultGPT4Omni' },
@@ -1688,52 +1691,111 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
     }
 
     // ----------------------------------------------------
-    // SPEECH RECOGNITION (VOICE INPUT)
+    // SPEECH RECOGNITION (VOICE INPUT & LIVE STREAMING)
     // ----------------------------------------------------
     initSpeechRecognition() {
         const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognitionClass) {
             this.speechRecognition = new SpeechRecognitionClass();
-            this.speechRecognition.continuous = false;
-            this.speechRecognition.interimResults = false;
+            this.speechRecognition.continuous = true;
+            this.speechRecognition.interimResults = true;
             this.speechRecognition.lang = 'en-US';
 
             this.speechRecognition.onresult = (event) => {
-                if (event.results && event.results[0] && event.results[0][0]) {
-                    const transcript = event.results[0][0].transcript;
-                    this.userInput = (this.userInput ? this.userInput.trim() + ' ' : '') + transcript;
-                    this.adjustTextareaHeight();
+                let interimTranscript = '';
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcriptPiece = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcriptPiece + ' ';
+                    } else {
+                        interimTranscript += transcriptPiece;
+                    }
                 }
-                this.isListening = false;
+
+                if (finalTranscript) {
+                    this.voiceAccumulatedText = (this.voiceAccumulatedText || '') + finalTranscript;
+                }
+
+                const currentCombined = ((this.voiceAccumulatedText || '') + interimTranscript).trim();
+                this.liveVoiceTranscript = currentCombined;
+
+                // Live stream directly into user input in real time as user speaks!
+                const basePrefix = this.voiceBaseInput ? this.voiceBaseInput.trim() + ' ' : '';
+                this.userInput = basePrefix + currentCombined;
+                this.adjustTextareaHeight();
+                this.scrollToBottom();
             };
 
-            this.speechRecognition.onerror = () => {
-                this.isListening = false;
+            this.speechRecognition.onerror = (event) => {
+                console.warn('Speech recognition status:', event.error);
+                if (event.error !== 'no-speech') {
+                    this.isListening = false;
+                }
             };
 
             this.speechRecognition.onend = () => {
-                this.isListening = false;
+                // If user didn't explicitly terminate, keep streaming alive
+                if (this.isListening) {
+                    try {
+                        this.speechRecognition.start();
+                    } catch (e) {
+                        this.isListening = false;
+                    }
+                }
             };
         }
     }
 
     handleToggleSpeechRecognition() {
         if (!this.speechRecognition) {
+            this.initSpeechRecognition();
+        }
+        if (!this.speechRecognition) {
             this.showToast('Voice Input', 'Speech recognition is not supported in this browser.', 'info');
             return;
         }
 
         if (this.isListening) {
-            this.speechRecognition.stop();
-            this.isListening = false;
+            this.stopSpeechRecognition();
         } else {
-            try {
-                this.speechRecognition.start();
-                this.isListening = true;
-            } catch (err) {
-                this.isListening = false;
-            }
+            this.startSpeechRecognition();
         }
+    }
+
+    startSpeechRecognition() {
+        this.voiceBaseInput = this.userInput || '';
+        this.voiceAccumulatedText = '';
+        this.liveVoiceTranscript = '';
+        this.isListening = true;
+        try {
+            this.speechRecognition.start();
+            this.showToast('Voice Typing Active', 'Speak now — live transcription will stream directly into the chat.', 'info');
+            this.scrollToBottom();
+        } catch (err) {
+            console.error('Error starting speech recognition:', err);
+            this.isListening = false;
+        }
+    }
+
+    stopSpeechRecognition() {
+        this.isListening = false;
+        if (this.speechRecognition) {
+            try {
+                this.speechRecognition.stop();
+            } catch (e) {}
+        }
+    }
+
+    handleFinishVoiceInput() {
+        this.stopSpeechRecognition();
+        this.showToast('Voice Input Completed', 'Transcription inserted into your chat composer.', 'success');
+    }
+
+    handleCancelVoiceInput() {
+        this.userInput = this.voiceBaseInput || '';
+        this.liveVoiceTranscript = '';
+        this.stopSpeechRecognition();
     }
 
     // ----------------------------------------------------
