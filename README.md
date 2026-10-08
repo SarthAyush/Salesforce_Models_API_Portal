@@ -13,9 +13,8 @@
 
 | Portal / Environment | Access URL | Description |
 | :--- | :--- | :--- |
-| **Primary Portal (Experience Cloud Site)** | [https://orgfarm-28a2091f48-dev-ed.develop.my.site.com/multimodelsarthakvforcesite](https://orgfarm-28a2091f48-dev-ed.develop.my.site.com/multimodelsarthakvforcesite) | Public Community Experience Site hosting the interactive Multi-Model Chat & Community Hub |
-| **Alternative Portal** | [https://orgfarm-28a2091f48-dev-ed.develop.my.site.com/multimodelvforcesite](https://orgfarm-28a2091f48-dev-ed.develop.my.site.com/multimodelvforcesite) | Secondary Experience Cloud Portal deployment |
-| **Salesforce Core Org** | [https://orgfarm-28a2091f48-dev-ed.develop.my.salesforce.com](https://orgfarm-28a2091f48-dev-ed.develop.my.salesforce.com) | Salesforce Developer Edition Backend & Setup Administration |
+| **Primary Portal (Experience Cloud Site)** | https://orgfarm-28a2091f48-dev-ed.develop.my.salesforce-sites.com/mumodelsarthak | Public Community Experience Site hosting the interactive Multi-Model Chat & Community Hub |
+
 
 ---
 
