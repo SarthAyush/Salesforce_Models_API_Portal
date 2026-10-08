@@ -2513,9 +2513,10 @@
     font-size: 12px;
 }
 
-.md-h1 { font-size: 16px; font-weight: 700; margin: 10px 0 6px 0; color: #0f172a; }
-.md-h2 { font-size: 15px; font-weight: 700; margin: 8px 0 4px 0; color: #1e293b; }
-.md-h3 { font-size: 14px; font-weight: 600; margin: 6px 0 4px 0; color: #334155; }
+.md-h1 { font-size: 1.18rem; font-weight: 700; margin: 12px 0 6px 0; color: #0f172a; display: block; line-height: 1.4; }
+.md-h2 { font-size: 1.08rem; font-weight: 700; margin: 10px 0 5px 0; color: #1e293b; display: block; line-height: 1.4; }
+.md-h3 { font-size: 1.02rem; font-weight: 600; margin: 8px 0 4px 0; color: #1e293b; display: block; line-height: 1.4; }
+.md-h4 { font-size: 0.95rem; font-weight: 600; margin: 6px 0 3px 0; color: #334155; display: block; line-height: 1.4; }
 .md-quote {
     border-left: 3px solid #6366f1;
     background: #f8fafc;
@@ -2544,6 +2545,10 @@
 .genai-root.dark-theme .ai-bubble lightning-formatted-rich-text hr {
     border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
+.genai-root.dark-theme .md-h1 { color: #f8fafc; }
+.genai-root.dark-theme .md-h2 { color: #f1f5f9; }
+.genai-root.dark-theme .md-h3 { color: #e2e8f0; }
+.genai-root.dark-theme .md-h4 { color: #cbd5e1; }
 
 /* --------------------------------------------------------------------------
    TYPING / LOADING INDICATOR

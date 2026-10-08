@@ -2700,11 +2700,12 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
         out = this.parseMarkdownTables(out);
 
         // 5. Headings (# H1, ## H2, ### H3, #### H4)
+        // Convert to <p class="md-h*"><b>...</b></p> which is 100% supported by lightning-formatted-rich-text
         out = out
-            .replace(/^####[ \t]+(.*$)/gim, '<h4 class="md-h4">$1</h4>')
-            .replace(/^###[ \t]+(.*$)/gim, '<h3 class="md-h3">$1</h3>')
-            .replace(/^##[ \t]+(.*$)/gim, '<h2 class="md-h2">$1</h2>')
-            .replace(/^#[ \t]+(.*$)/gim, '<h1 class="md-h1">$1</h1>');
+            .replace(/^####[ \t]+(.*$)/gim, '<p class="md-h4"><b>$1</b></p>')
+            .replace(/^###[ \t]+(.*$)/gim, '<p class="md-h3"><b>$1</b></p>')
+            .replace(/^##[ \t]+(.*$)/gim, '<p class="md-h2"><b>$1</b></p>')
+            .replace(/^#[ \t]+(.*$)/gim, '<p class="md-h1"><b>$1</b></p>');
 
         // 6. Inline code (`code`)
         out = out.replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>');
@@ -2718,17 +2719,10 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
             .replace(/__(.*?)__/g, '<b>$1</b>');
 
         // 8. Horizontal rules (---, ***, ___) within the body
-        // Replace 3 or more hyphens/asterisks/underscores on their own line with a sleek <hr class="md-hr"/>
         out = out.replace(/^[ \t]*(?:[-*_][ \t]*){3,}$/gm, '<hr class="md-hr"/>');
-
-        // Clean inline double/triple dashes to clean typographic em-dash (—)
         out = out.replace(/([^\n\S])---([^\n\S])/g, '$1&mdash;$2');
         out = out.replace(/([^\n\S])--([^\n\S])/g, '$1&mdash;$2');
-
-        // Collapse multiple consecutive horizontal rules into one
         out = out.replace(/(?:<hr class="md-hr"\/>\s*)+<hr class="md-hr"\/>/g, '<hr class="md-hr"/>');
-
-        // Remove dividers at start or end if created
         out = out.replace(/^\s*<hr class="md-hr"\/>\s*/i, '');
         out = out.replace(/\s*<hr class="md-hr"\/>\s*$/i, '');
 
@@ -2738,34 +2732,34 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
 
         // 10. Bullet lists (- item or * item)
         out = out.replace(/^[ \t]*[-*][ \t]+(.*$)/gim, '<li class="md-bullet">$1</li>');
-        out = out.replace(/(<li class="md-bullet">[\s\S]*?<\/li>)/gim, '<ul class="md-ul">$1</ul>');
+        out = out.replace(/(<li class="md-bullet">[\s\S]*?<\/li>(?:\s*<li class="md-bullet">[\s\S]*?<\/li>)*)/gim, '<ul class="md-ul">$1</ul>');
         out = out.replace(/<\/ul>\s*<ul class="md-ul">/gim, '');
 
         // 11. Numbered lists (1. item)
         out = out.replace(/^[ \t]*\d+\.[ \t]+(.*$)/gim, '<li class="md-num-item">$1</li>');
-        out = out.replace(/(<li class="md-num-item">[\s\S]*?<\/li>)/gim, '<ol class="md-ol">$1</ol>');
+        out = out.replace(/(<li class="md-num-item">[\s\S]*?<\/li>(?:\s*<li class="md-num-item">[\s\S]*?<\/li>)*)/gim, '<ol class="md-ol">$1</ol>');
         out = out.replace(/<\/ol>\s*<ol class="md-ol">/gim, '');
 
-        // 12. Collapse 3+ consecutive newlines down to 2 newlines (eliminates huge blank gaps)
+        // 12. Normalize multiple newlines
         out = out.replace(/\n{3,}/g, '\n\n');
 
-        // 13. Remove newlines directly adjacent to block elements and dividers to eliminate double/triple spacing
-        out = out.replace(/\n*(<hr class="md-hr"\/>)\n*/g, '$1');
-        out = out.replace(/\n*(<(?:h[1-6]|ul|ol|blockquote|div)\b[^>]*>)/gi, '$1');
-        out = out.replace(/(<\/(?:h[1-6]|ul|ol|blockquote|div)>)\n*/gi, '$1');
-
-        // 14. Convert remaining paragraph breaks to <br/><br/> and single line breaks to <br/>
+        // 13. Convert paragraph breaks to <br/><br/> and single line breaks to <br/>
         out = out.replace(/\n{2,}/g, '<br/><br/>').replace(/\n/g, '<br/>');
 
-        // 15. Strip redundant <br/> tags before or after block elements, tables, and dividers
+        // 14. Clean up excessive <br/> directly around block elements while preserving block separation
         out = out
-            .replace(/(?:<br\s*\/?>\s*)+(<(?:h[1-6]|ul|ol|blockquote|div|table|hr)\b)/gi, '$1')
-            .replace(/(<\/(?:h[1-6]|ul|ol|blockquote|div|table)>|<hr\b[^>]*\/>)(?:\s*<br\s*\/?>)+/gi, '$1');
+            .replace(/(?:<br\s*\/?>\s*)+(<(?:p|ul|ol|blockquote|table|hr)\b)/gi, '$1')
+            .replace(/(<\/(?:p|ul|ol|blockquote|table)>|<hr\b[^>]*\/>)(?:\s*<br\s*\/?>)*/gi, '$1<br/>');
 
-        // 16. Remove leading and trailing <br/> tags from the final block
+        // 15. Clean up inside list elements
+        out = out.replace(/<([ou]l)\b[^>]*>(?:\s*<br\s*\/?>)+/gi, '<$1 class="md-$1">');
+        out = out.replace(/(?:<br\s*\/?>)+\s*<\/([ou]l)>/gi, '</$1>');
+        out = out.replace(/<\/li>(?:\s*<br\s*\/?>)+\s*<li/gi, '</li><li');
+
+        // 16. Remove leading and trailing <br/>
         out = out.replace(/^(?:\s*<br\s*\/?>)+/gi, '').replace(/(?:<br\s*\/?>\s*)+$/gi, '');
 
-        // 17. Collapse multiple consecutive horizontal spaces between words
+        // 17. Collapse multiple consecutive horizontal spaces
         out = out.replace(/([^\s>])[ \t]{2,}([^\s<])/g, '$1 $2');
 
         return out.trim();
