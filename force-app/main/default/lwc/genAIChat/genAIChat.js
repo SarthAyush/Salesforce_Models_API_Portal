@@ -92,6 +92,7 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
 
     // Bring-Your-Own-Org (BYOO) OAuth State
     @track isOrgModalOpen = false;
+    @track orgModalActiveTab = 'connect'; // 'connect', 'guide', 'einstein'
     @track connectedOrgData = null;
     @track isConnectingOrg = false;
     @track isDisconnectingOrg = false;
@@ -646,6 +647,29 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
         }
     }
 
+    handleSelectOrgModalTab(event) {
+        const tab = event.currentTarget.dataset.tab;
+        if (tab) {
+            this.orgModalActiveTab = tab;
+        }
+    }
+
+    handleCopyText(event) {
+        const textToCopy = event.currentTarget.dataset.copy;
+        if (!textToCopy) return;
+        if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    this.showToast('Copied', `Copied to clipboard: ${textToCopy}`, 'success');
+                })
+                .catch(() => {
+                    this.showToast('Copied', textToCopy, 'info');
+                });
+        } else {
+            this.showToast('Copied', textToCopy, 'info');
+        }
+    }
+
     handleSelectAuthMethod(event) {
         this.orgAuthMethod = event.currentTarget.dataset.method;
         this.orgModalError = null;
@@ -992,6 +1016,30 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
 
     get connectedOrgMenuLabel() {
         return this.isUserOrgConnected ? `Connected Org (${this.connectedOrgType})` : 'Connect Salesforce Org';
+    }
+
+    get isOrgTabConnect() {
+        return !this.orgModalActiveTab || this.orgModalActiveTab === 'connect';
+    }
+
+    get isOrgTabGuide() {
+        return this.orgModalActiveTab === 'guide';
+    }
+
+    get isOrgTabEinstein() {
+        return this.orgModalActiveTab === 'einstein';
+    }
+
+    get orgModalConnectTabClass() {
+        return `modal-tab-nav-btn ${this.isOrgTabConnect ? 'active' : ''}`;
+    }
+
+    get orgModalGuideTabClass() {
+        return `modal-tab-nav-btn ${this.isOrgTabGuide ? 'active' : ''}`;
+    }
+
+    get orgModalEinsteinTabClass() {
+        return `modal-tab-nav-btn ${this.isOrgTabEinstein ? 'active' : ''}`;
     }
 
     get isAuthMethodClientCredentials() {

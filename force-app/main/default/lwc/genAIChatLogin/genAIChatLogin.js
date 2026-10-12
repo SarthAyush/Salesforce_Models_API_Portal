@@ -1,5 +1,6 @@
 import { LightningElement, track, api } from 'lwc';
 import loginUser from '@salesforce/apex/GenAIChatController.loginUser';
+import loginWithGoogle from '@salesforce/apex/GenAIChatController.loginWithGoogle';
 import sendPasswordResetCode from '@salesforce/apex/GenAIChatController.sendPasswordResetCode';
 import verifyResetCodeAndSetPassword from '@salesforce/apex/GenAIChatController.verifyResetCodeAndSetPassword';
 
@@ -13,6 +14,12 @@ export default class GenAIChatLogin extends LightningElement {
     @track errorMessage = '';
     @track successMessage = '';
     @track isLoading = false;
+
+    // Google Authentication state
+    @track showGoogleRegisterPrompt = false;
+    @track googlePendingIdToken = '';
+    @track googlePendingEmail = '';
+    boundGoogleMessageHandler = null;
 
     // Reset password modal state (2-Step Email OTP Flow)
     @track showResetModal = false;
@@ -129,11 +136,199 @@ export default class GenAIChatLogin extends LightningElement {
         }
     }
 
+    connectedCallback() {
+        this.boundGoogleMessageHandler = this.handleGoogleOAuthMessage.bind(this);
+        window.addEventListener('message', this.boundGoogleMessageHandler);
+    }
+
+    disconnectedCallback() {
+        if (this.boundGoogleMessageHandler) {
+            window.removeEventListener('message', this.boundGoogleMessageHandler);
+        }
+    }
+
     handleSwitchToSignup() {
         this.dispatchEvent(new CustomEvent('switchtosignup', {
             bubbles: true,
             composed: true
         }));
+    }
+
+    @track showGoogleConfigModal = false;
+    @track googleClientIdInput = '';
+
+    get googleCallbackUrl() {
+        const isSitesUrl = window.location.origin.includes('salesforce-sites.com');
+        return isSitesUrl
+            ? window.location.origin + '/mumodelsarthak/apex/genAIOAuthCallback'
+            : window.location.origin + '/apex/genAIOAuthCallback';
+    }
+
+    openGoogleConfigModal() {
+        this.googleClientIdInput = window.localStorage ? window.localStorage.getItem('GENAI_GOOGLE_CLIENT_ID') || '' : '';
+        this.showGoogleConfigModal = true;
+    }
+
+    closeGoogleConfigModal() {
+        this.showGoogleConfigModal = false;
+    }
+
+    handleGoogleClientIdInputChange(event) {
+        this.googleClientIdInput = event.target.value;
+    }
+
+    handleSaveGoogleClientId() {
+        const id = (this.googleClientIdInput || '').trim();
+        if (window.localStorage) {
+            if (id) {
+                window.localStorage.setItem('GENAI_GOOGLE_CLIENT_ID', id);
+            } else {
+                window.localStorage.removeItem('GENAI_GOOGLE_CLIENT_ID');
+            }
+        }
+        this.showGoogleConfigModal = false;
+        this.successMessage = id ? 'Google Client ID saved! You can now sign in with Google.' : 'Google Client ID cleared.';
+    }
+
+    handleCopySnippet(event) {
+        const text = event.currentTarget.dataset.copy;
+        if (text && navigator.clipboard) {
+            navigator.clipboard.writeText(text);
+            this.successMessage = 'Callback URL copied to clipboard!';
+        }
+    }
+
+    // ----------------------------------------------------
+    // GOOGLE OAUTH AUTHENTICATION HANDLERS
+    // ----------------------------------------------------
+    handleGoogleSignIn() {
+        this.errorMessage = '';
+        this.successMessage = '';
+        this.showGoogleRegisterPrompt = false;
+
+        const callbackUrl = this.googleCallbackUrl;
+
+        // Retrieve configured Client ID from localStorage
+        let googleClientId = '';
+        try {
+            googleClientId = window.localStorage ? window.localStorage.getItem('GENAI_GOOGLE_CLIENT_ID') : '';
+        } catch (e) {
+            googleClientId = '';
+        }
+
+        // If no Client ID has been configured yet, guide the user to set it up
+        if (!googleClientId || !googleClientId.trim()) {
+            this.openGoogleConfigModal();
+            return;
+        }
+
+        const authorizeUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+            `client_id=${encodeURIComponent(googleClientId.trim())}` +
+            `&redirect_uri=${encodeURIComponent(callbackUrl)}` +
+            `&response_type=id_token` +
+            `&scope=openid%20profile%20email` +
+            `&nonce=${Date.now()}` +
+            `&state=google_auth` +
+            `&prompt=select_account`;
+
+        const width = 500;
+        const height = 620;
+        const left = Math.max(0, (window.screen.width - width) / 2);
+        const top = Math.max(0, (window.screen.height - height) / 2);
+
+        const popup = window.open(
+            authorizeUrl,
+            'GoogleOAuthPopup',
+            `width=${width},height=${height},top=${top},left=${left},menubar=no,toolbar=no,location=yes,status=yes`
+        );
+
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+            this.errorMessage = 'Popup blocked! Please allow popups in your browser to sign in with Google.';
+        }
+    }
+
+    async handleGoogleOAuthMessage(event) {
+        if (!event.data || event.data.type !== 'GOOGLE_OAUTH_RESPONSE') {
+            return;
+        }
+
+        const data = event.data;
+        if (data.error) {
+            this.errorMessage = `Google Sign-in Cancelled or Failed: ${data.errorDescription || data.error}`;
+            return;
+        }
+
+        if (data.idToken) {
+            await this.processGoogleToken(data.idToken, false);
+        }
+    }
+
+    async processGoogleToken(idToken, autoCreate) {
+        this.isLoading = true;
+        this.errorMessage = '';
+        this.showGoogleRegisterPrompt = false;
+
+        try {
+            const result = await loginWithGoogle({
+                idToken: idToken,
+                requestedRole: this.selectedRole,
+                autoCreate: autoCreate
+            });
+
+            if (result && (result.success || result.isSuccess)) {
+                this.successMessage = `Google verified! Welcome, ${result.user?.name || 'User'}!`;
+                const token = result.user?.sessionToken || result.sessionToken;
+
+                this.dispatchEvent(new CustomEvent('login', {
+                    bubbles: true,
+                    composed: true,
+                    detail: {
+                        user: result.user,
+                        sessionToken: token,
+                        role: this.selectedRole
+                    }
+                }));
+            } else {
+                const msg = result?.message || result?.errorMessage || 'Google authentication failed.';
+                // Handle case where user record does not exist
+                if (msg.startsWith('USER_NOT_FOUND:')) {
+                    this.googlePendingIdToken = idToken;
+                    // Extract email if possible
+                    const emailMatch = msg.match(/\((.*?)\)/);
+                    this.googlePendingEmail = emailMatch ? emailMatch[1] : 'your Google Account';
+                    this.showGoogleRegisterPrompt = true;
+                } else {
+                    this.errorMessage = msg;
+                }
+            }
+        } catch (error) {
+            console.error('Google login error:', error);
+            const msg = error?.body?.message || error?.message || 'Failed to authenticate with Google.';
+            if (msg.includes('USER_NOT_FOUND')) {
+                this.googlePendingIdToken = idToken;
+                this.googlePendingEmail = 'your Google Account';
+                this.showGoogleRegisterPrompt = true;
+            } else {
+                this.errorMessage = msg;
+            }
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
+    async handleConfirmGoogleRegister() {
+        if (!this.googlePendingIdToken) {
+            this.errorMessage = 'Authentication session expired. Please click Continue with Google again.';
+            this.showGoogleRegisterPrompt = false;
+            return;
+        }
+        await this.processGoogleToken(this.googlePendingIdToken, true);
+    }
+
+    handleDismissGooglePrompt() {
+        this.showGoogleRegisterPrompt = false;
+        this.googlePendingIdToken = '';
+        this.googlePendingEmail = '';
     }
 
     // ----------------------------------------------------

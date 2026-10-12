@@ -69,8 +69,11 @@
                 parseQuery(hash);
                 parseQuery(search);
 
+                var isGoogleAuth = params.id_token || (params.state && params.state.indexOf('google_auth') !== -1);
+
                 var payload = {
-                    type: 'SALESFORCE_ORG_AUTH_RESPONSE',
+                    type: isGoogleAuth ? 'GOOGLE_OAUTH_RESPONSE' : 'SALESFORCE_ORG_AUTH_RESPONSE',
+                    idToken: params.id_token || null,
                     accessToken: params.access_token || null,
                     instanceUrl: params.instance_url || null,
                     refreshToken: params.refresh_token || null,

@@ -943,6 +943,165 @@ public without sharing class GenAIChatController {
         }
     }
 
+    /**
+     * Retrieve configured Google OAuth Client ID or fallback to standard system setting
+     */
+    @AuraEnabled(cacheable=false)
+    public static Map<String, Object> getGoogleAuthConfig() {
+        Map<String, Object> cfg = new Map<String, Object>();
+        String clientId = '';
+        try {
+            Gemini_Settings__c gs = Gemini_Settings__c.getOrgDefaults();
+            if (gs != null && String.isNotBlank(gs.Endpoint_URL__c) && gs.Endpoint_URL__c.contains('googleusercontent.com')) {
+                clientId = gs.Endpoint_URL__c.trim();
+            }
+        } catch (Exception e) {
+            // Ignore fallback
+        }
+        cfg.put('clientId', clientId);
+        cfg.put('isConfigured', String.isNotBlank(clientId));
+        return cfg;
+    }
+
+    @AuraEnabled
+    public static Boolean saveGoogleAuthClientId(String sessionToken, String clientId) {
+        Chat_User__c adminUser = getUserByToken(sessionToken);
+        if (adminUser == null || adminUser.Is_Admin__c != true) {
+            throw new AuraHandledException('Admin authorization required to configure Google Client ID.');
+        }
+        Gemini_Settings__c gs = Gemini_Settings__c.getOrgDefaults();
+        if (gs == null) {
+            gs = new Gemini_Settings__c();
+        }
+        gs.Endpoint_URL__c = String.isNotBlank(clientId) ? clientId.trim() : '';
+        upsert gs;
+        return true;
+    }
+
+    /**
+     * Authenticates or creates a user account via Google OAuth token.
+     * Validates the token against Google's tokeninfo API.
+     * If user does NOT exist and autoCreate is true, it registers them seamlessly.
+     * If user does NOT exist and autoCreate is false, it returns an explicit not-found error
+     * so the UI can prompt the user to create their account or switch to signup mode.
+     */
+    @AuraEnabled
+    public static AuthResultDTO loginWithGoogle(String idToken, String requestedRole, Boolean autoCreate) {
+        AuthResultDTO res = new AuthResultDTO();
+        try {
+            if (String.isBlank(idToken)) {
+                res.success = false;
+                res.message = 'Missing Google authentication token.';
+                return res;
+            }
+
+            // 1. Verify token with Google's tokeninfo endpoint
+            Http h = new Http();
+            HttpRequest req = new HttpRequest();
+            req.setEndpoint('https://oauth2.googleapis.com/tokeninfo?id_token=' + EncodingUtil.urlEncode(idToken.trim(), 'UTF-8'));
+            req.setMethod('GET');
+            req.setTimeout(15000);
+
+            HttpResponse resp = h.send(req);
+            if (resp.getStatusCode() != 200) {
+                res.success = false;
+                res.message = 'Google token verification failed or token has expired. Please sign in again.';
+                return res;
+            }
+
+            // 2. Parse Google user profile
+            Map<String, Object> tokenInfo = (Map<String, Object>) JSON.deserializeUntyped(resp.getBody());
+            String email = (String) tokenInfo.get('email');
+            if (String.isBlank(email)) {
+                res.success = false;
+                res.message = 'Unable to extract email address from Google authentication response.';
+                return res;
+            }
+            String cleanEmail = email.trim().toLowerCase();
+            String name = (String) tokenInfo.get('name');
+            String picture = (String) tokenInfo.get('picture');
+
+            // 3. Query existing Chat_User__c record
+            List<Chat_User__c> users = [
+                SELECT Id, Name, Email__c, Avatar_Icon__c, Profile_Picture_Data__c, Bio__c, Password_Hash__c, Session_Token__c, Is_Admin__c,
+                       Is_Frozen__c, Can_Chat__c, Can_Use_Community__c, Can_Access_Advanced_Models__c,
+                       Total_Messages_Sent__c, Total_Tokens_Used__c, Last_Login__c,
+                       Is_Org_Connected__c, Connected_Org_Instance_Url__c, Connected_Org_Type__c,
+                       Connected_Org_Username__c, Connected_Org_Access_Token__c, Connected_Org_Refresh_Token__c,
+                       Connected_Org_Client_Id__c, Connected_Org_Connected_Date__c,
+                       Public_Key__c, Key_Fingerprint__c
+                FROM Chat_User__c
+                WHERE Email__c = :cleanEmail
+                LIMIT 1
+            ];
+
+            Chat_User__c user;
+            if (!users.isEmpty()) {
+                user = users[0];
+                if (user.Is_Frozen__c == true) {
+                    res.success = false;
+                    res.message = 'Account Suspended: This user account has been frozen by the administrator.';
+                    return res;
+                }
+                // Update photo if provided and user hasn't set custom photo
+                if (String.isNotBlank(picture) && String.isBlank(user.Profile_Picture_Data__c)) {
+                    user.Profile_Picture_Data__c = picture;
+                }
+            } else {
+                // If user tried to login and account doesn't exist, and autoCreate was not requested
+                if (autoCreate != true) {
+                    res.success = false;
+                    res.message = 'USER_NOT_FOUND: No account found registered with Google email (' + cleanEmail + '). Would you like to create an account?';
+                    return res;
+                }
+
+                // Auto-create new user via Google
+                user = new Chat_User__c();
+                user.Name = String.isNotBlank(name) ? name.trim().abbreviate(80) : cleanEmail.split('@')[0];
+                user.Email__c = cleanEmail;
+                user.Avatar_Icon__c = 'utility:user';
+                if (String.isNotBlank(picture)) {
+                    user.Profile_Picture_Data__c = picture;
+                }
+                user.Bio__c = 'Google Authenticated Member';
+                user.Password_Hash__c = hashPassword(Crypto.getRandomLong() + 'GoogleAuthSecurePass');
+                user.Is_Frozen__c = false;
+                user.Can_Chat__c = true;
+                user.Can_Use_Community__c = true;
+                user.Can_Access_Advanced_Models__c = true;
+
+                // Grant admin if first user or email contains admin
+                Integer adminCount = [SELECT COUNT() FROM Chat_User__c WHERE Is_Admin__c = true];
+                if (adminCount == 0 || cleanEmail.contains('admin')) {
+                    user.Is_Admin__c = true;
+                }
+                insert user;
+            }
+
+            // Role verification
+            if (String.isNotBlank(requestedRole) && 'admin'.equalsIgnoreCase(requestedRole) && user.Is_Admin__c != true) {
+                res.success = false;
+                res.message = 'Access Denied: This account (' + cleanEmail + ') does not possess Administrator privileges.';
+                return res;
+            }
+
+            // Mint session token
+            String token = generateToken();
+            user.Session_Token__c = token;
+            user.Last_Login__c = Datetime.now();
+            update user;
+
+            res.success = true;
+            res.message = 'Welcome, ' + user.Name + '!';
+            res.user = formatUserDto(user);
+            return res;
+        } catch (Exception e) {
+            res.success = false;
+            res.message = 'Google authentication error: ' + e.getMessage();
+            return res;
+        }
+    }
+
     @AuraEnabled(cacheable=false)
     public static ChatUserDTO validateSession(String sessionToken) {
         if (String.isBlank(sessionToken)) return null;

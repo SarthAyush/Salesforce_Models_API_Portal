@@ -655,13 +655,19 @@
             <template if:true={isOrgModalOpen}>
                 <div class="history-backdrop" onclick={toggleOrgModal}></div>
                 <div class="custom-user-modal-panel org-connect-modal-panel" onclick={handleStopPropagation}>
+                    <!-- MODAL HEADER -->
                     <div class="custom-modal-header">
                         <div class="modal-hdr-title">
                             <div class="org-modal-title-row">
-                                <lightning-icon icon-name="utility:connected_apps" size="small" class="org-title-icon"></lightning-icon>
+                                <div class="org-title-avatar-badge">
+                                    <lightning-icon icon-name="utility:connected_apps" size="small" class="org-title-icon"></lightning-icon>
+                                </div>
                                 <div>
-                                    <h3>Salesforce Org Connection</h3>
-                                    <p>Bring your own Salesforce Org to run chats using your Org's Einstein Models API.</p>
+                                    <div class="modal-title-badge-line">
+                                        <h3>Connect Salesforce Org &amp; Einstein AI</h3>
+                                        <span class="modal-header-tag">BYOO Architecture</span>
+                                    </div>
+                                    <p>Route AI queries to any Salesforce Org's Einstein Trust Layer and Generative Model API.</p>
                                 </div>
                             </div>
                         </div>
@@ -670,275 +676,561 @@
                         </button>
                     </div>
 
+                    <!-- TOP-LEVEL SECTION TABS -->
+                    <div class="org-modal-nav-tabs">
+                        <button type="button" class={orgModalConnectTabClass} data-tab="connect" onclick={handleSelectOrgModalTab}>
+                            <lightning-icon icon-name="utility:link" size="xx-small"></lightning-icon>
+                            <span>1. Connection Setup</span>
+                        </button>
+                        <button type="button" class={orgModalGuideTabClass} data-tab="guide" onclick={handleSelectOrgModalTab}>
+                            <lightning-icon icon-name="utility:custom_apps" size="xx-small"></lightning-icon>
+                            <span>2. ECA Setup Guide</span>
+                            <span class="tab-badge-pill">Step-by-Step</span>
+                        </button>
+                        <button type="button" class={orgModalEinsteinTabClass} data-tab="einstein" onclick={handleSelectOrgModalTab}>
+                            <lightning-icon icon-name="utility:einstein" size="xx-small"></lightning-icon>
+                            <span>3. Einstein AI Deep Dive</span>
+                            <span class="tab-badge-pill trust-pill">Trust Layer</span>
+                        </button>
+                    </div>
+
+                    <!-- ALERTS -->
                     <template if:true={orgModalError}>
-                        <div class="modal-status-alert error-alert">{orgModalError}</div>
+                        <div class="modal-status-alert error-alert">
+                            <lightning-icon icon-name="utility:error" size="x-small" variant="error"></lightning-icon>
+                            <span>{orgModalError}</span>
+                        </div>
                     </template>
                     <template if:true={orgModalSuccess}>
-                        <div class="modal-status-alert success-alert">{orgModalSuccess}</div>
+                        <div class="modal-status-alert success-alert">
+                            <lightning-icon icon-name="utility:success" size="x-small" variant="success"></lightning-icon>
+                            <span>{orgModalSuccess}</span>
+                        </div>
                     </template>
 
-                    <!-- ALREADY CONNECTED STATE -->
-                    <template if:true={isUserOrgConnected}>
-                        <div class="org-connected-status-card">
-                            <div class="org-card-header">
-                                <span class="live-status-pill online">
-                                    <span class="live-status-dot"></span> Active &amp; Connected
-                                </span>
-                                <span class="org-env-pill">{connectedOrgType}</span>
+                    <!-- TAB 1: CONNECTION (STATUS OR SETUP FORM) -->
+                    <template if:true={isOrgTabConnect}>
+                        <!-- ALREADY CONNECTED STATE -->
+                        <template if:true={isUserOrgConnected}>
+                            <div class="org-connected-status-card">
+                                <div class="org-card-header">
+                                    <span class="live-status-pill online">
+                                        <span class="live-status-dot"></span> Active &amp; Connected
+                                    </span>
+                                    <span class="org-env-pill">{connectedOrgType}</span>
+                                </div>
+
+                                <div class="org-details-grid">
+                                    <div class="org-detail-cell">
+                                        <span class="org-cell-label">Target Instance URL</span>
+                                        <span class="org-cell-value link-text" title={connectedOrgInstanceUrl}>{connectedOrgInstanceUrl}</span>
+                                    </div>
+                                    <div class="org-detail-cell">
+                                        <span class="org-cell-label">Connected User / Principal</span>
+                                        <span class="org-cell-value">{connectedOrgUsername}</span>
+                                    </div>
+                                    <div class="org-detail-cell">
+                                        <span class="org-cell-label">Connected Since</span>
+                                        <span class="org-cell-value">{connectedOrgDateFormatted}</span>
+                                    </div>
+                                    <div class="org-detail-cell">
+                                        <span class="org-cell-label">Inference Routing</span>
+                                        <span class="org-cell-value badge-routed">Target Org Einstein API</span>
+                                    </div>
+                                </div>
+
+                                <div class="org-notice-box">
+                                    <lightning-icon icon-name="utility:shield" size="x-small" class="notice-icon"></lightning-icon>
+                                    <span>All your queries in this workspace are routed to <strong>{connectedOrgInstanceUrl}</strong> via the Einstein Trust Layer with Zero Data Retention. Consumes your connected Org's AI credits.</span>
+                                </div>
+
+                                <template if:true={testConnectionResult}>
+                                    <div class="connection-test-result-box">
+                                        <div class="test-result-header">
+                                            <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                                            <span>Diagnostic Response</span>
+                                        </div>
+                                        <code>{testConnectionResult}</code>
+                                    </div>
+                                </template>
+
+                                <div class="custom-modal-actions org-connected-actions">
+                                    <button type="button" class="action-pill-btn test-conn-btn" onclick={handleTestConnection} disabled={isTestingConnection}>
+                                        <lightning-icon icon-name="utility:connected_apps" size="xx-small"></lightning-icon>
+                                        <span>{testConnectionButtonLabel}</span>
+                                    </button>
+                                    <button type="button" class="action-pill-btn disconnect-org-btn" onclick={handleDisconnectOrg} disabled={isDisconnectingOrg}>
+                                        <lightning-icon icon-name="utility:logout" size="xx-small"></lightning-icon>
+                                        <span>Disconnect Org</span>
+                                    </button>
+                                    <button type="button" class="modal-btn-cancel" onclick={toggleOrgModal}>Close</button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- NOT CONNECTED STATE (FORM) -->
+                        <template if:false={isUserOrgConnected}>
+                            <div class="org-connect-setup-container">
+                                <!-- Connection Method Switcher Tabs -->
+                                <div class="auth-method-tabs-bar">
+                                    <button type="button" class={clientCredsTabClass} data-method="client_credentials" onclick={handleSelectAuthMethod}>
+                                        <lightning-icon icon-name="utility:key" size="xx-small"></lightning-icon>
+                                        <span>Client Credentials (ECA)</span>
+                                    </button>
+                                    <button type="button" class={popupFlowTabClass} data-method="popup_flow" onclick={handleSelectAuthMethod}>
+                                        <lightning-icon icon-name="utility:open" size="xx-small"></lightning-icon>
+                                        <span>OAuth 2.0 Web Popup</span>
+                                    </button>
+                                    <button type="button" class={manualTabClass} data-method="manual_token" onclick={handleSelectAuthMethod}>
+                                        <lightning-icon icon-name="utility:password" size="xx-small"></lightning-icon>
+                                        <span>Direct Bearer Token</span>
+                                    </button>
+                                </div>
+
+                                <!-- 1. CLIENT CREDENTIALS FLOW -->
+                                <template if:true={isAuthMethodClientCredentials}>
+                                    <div class="setup-intro-banner">
+                                        <div class="banner-icon-col">
+                                            <lightning-icon icon-name="utility:shield" size="medium" class="banner-icon"></lightning-icon>
+                                        </div>
+                                        <div class="banner-text-col">
+                                            <h4>External Client App (Recommended)</h4>
+                                            <p>Machine-to-machine JWT authentication using OAuth 2.0 Client Credentials. Persistent connection with background token renewal and no browser session timeouts.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="quick-guide-helper-card">
+                                        <div class="helper-card-left">
+                                            <lightning-icon icon-name="utility:info_alt" size="x-small"></lightning-icon>
+                                            <span>Haven't created an External Client App yet? Check the step-by-step setup walkthrough.</span>
+                                        </div>
+                                        <button type="button" class="helper-card-link-btn" data-tab="guide" onclick={handleSelectOrgModalTab}>
+                                            View Setup Guide &rarr;
+                                        </button>
+                                    </div>
+
+                                    <div class="modal-form-group">
+                                        <div class="field-label-row">
+                                            <label class="modal-form-label" for="eca-instance-url">Target Org My Domain URL *</label>
+                                            <span class="field-badge">Required</span>
+                                        </div>
+                                        <input 
+                                            id="eca-instance-url"
+                                            type="url" 
+                                            class="modal-form-input" 
+                                            placeholder="https://yourcompany.develop.my.salesforce.com"
+                                            value={ecaInstanceUrl} 
+                                            oninput={handleEcaInstanceUrlChange} />
+                                        <span class="field-subtext">The My Domain URL of the target Salesforce Org hosting Einstein AI.</span>
+                                    </div>
+
+                                    <div class="modal-form-group">
+                                        <div class="field-label-row">
+                                            <label class="modal-form-label" for="eca-client-id">Consumer Key (Client ID) *</label>
+                                            <span class="field-badge">From ECA</span>
+                                        </div>
+                                        <input 
+                                            id="eca-client-id"
+                                            type="text" 
+                                            class="modal-form-input code-font" 
+                                            placeholder="e.g. 3MVG9... or external client app client_id"
+                                            value={ecaClientId} 
+                                            oninput={handleEcaClientIdChange} />
+                                        <span class="field-subtext">From Target Org: <em>Setup &rarr; External Client App Manager &rarr; [App] &rarr; Settings &rarr; Consumer Key</em>.</span>
+                                    </div>
+
+                                    <div class="modal-form-group">
+                                        <div class="field-label-row">
+                                            <label class="modal-form-label" for="eca-client-secret">Consumer Secret *</label>
+                                            <span class="field-badge">Encrypted in Transit</span>
+                                        </div>
+                                        <input 
+                                            id="eca-client-secret"
+                                            type="password" 
+                                            class="modal-form-input code-font" 
+                                            placeholder="Enter Consumer Secret"
+                                            value={ecaClientSecret} 
+                                            oninput={handleEcaClientSecretChange} />
+                                        <span class="field-subtext">From Target Org: <em>Setup &rarr; External Client App Manager &rarr; [App] &rarr; Settings &rarr; Consumer Secret</em>.</span>
+                                    </div>
+
+                                    <div class="oauth-launch-cta-row">
+                                        <button 
+                                            type="button" 
+                                            class="launch-oauth-button" 
+                                            onclick={handleConnectClientCredentials} 
+                                            disabled={isConnectingOrg}>
+                                            <lightning-icon icon-name="utility:connected_apps" size="small" variant="inverse"></lightning-icon>
+                                            <span>
+                                                <template if:true={isConnectingOrg}>Connecting Org...</template>
+                                                <template if:false={isConnectingOrg}>Connect via Client Credentials</template>
+                                            </span>
+                                        </button>
+                                        <span class="oauth-cta-hint">Directly authenticates with Target Org via <code>grant_type=client_credentials</code> and mints a high-trust session.</span>
+                                    </div>
+                                </template>
+
+                                <!-- 2. OAUTH POPUP FLOW -->
+                                <template if:true={isAuthMethodPopupFlow}>
+                                    <div class="setup-intro-banner">
+                                        <div class="banner-icon-col">
+                                            <lightning-icon icon-name="utility:world" size="medium" class="banner-icon"></lightning-icon>
+                                        </div>
+                                        <div class="banner-text-col">
+                                            <h4>Interactive Browser OAuth 2.0</h4>
+                                            <p>Sign in using your Salesforce browser credentials via standard OAuth 2.0 Web Server Authorization Code flow.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="modal-form-group">
+                                        <label class="modal-form-label">Salesforce Environment</label>
+                                        <div class="env-toggle-pills">
+                                            <button 
+                                                type="button" 
+                                                class={productionEnvBtnClass} 
+                                                data-env="production" 
+                                                onclick={handleSelectOAuthEnv}>
+                                                <lightning-icon icon-name="utility:world" size="xx-small"></lightning-icon>
+                                                <span>Production / Dev</span>
+                                            </button>
+                                            <button 
+                                                type="button" 
+                                                class={sandboxEnvBtnClass} 
+                                                data-env="sandbox" 
+                                                onclick={handleSelectOAuthEnv}>
+                                                <lightning-icon icon-name="utility:custom_apps" size="xx-small"></lightning-icon>
+                                                <span>Sandbox</span>
+                                            </button>
+                                            <button 
+                                                type="button" 
+                                                class={customEnvBtnClass} 
+                                                data-env="custom" 
+                                                onclick={handleSelectOAuthEnv}>
+                                                <lightning-icon icon-name="utility:company" size="xx-small"></lightning-icon>
+                                                <span>My Domain</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <template if:true={isCustomEnvSelected}>
+                                        <div class="modal-form-group">
+                                            <label class="modal-form-label" for="custom-domain-url">Custom My Domain URL</label>
+                                            <input 
+                                                id="custom-domain-url"
+                                                type="url" 
+                                                class="modal-form-input" 
+                                                placeholder="https://yourcompany.my.salesforce.com"
+                                                value={customLoginUrl} 
+                                                oninput={handleCustomLoginUrlChange} />
+                                        </div>
+                                    </template>
+
+                                    <div class="advanced-oauth-toggle" onclick={toggleAdvancedOAuth}>
+                                        <span>Advanced: Connected App Client ID</span>
+                                        <lightning-icon icon-name={advancedOAuthChevronIcon} size="xx-small"></lightning-icon>
+                                    </div>
+                                    <template if:true={showAdvancedOAuth}>
+                                        <div class="modal-form-group advanced-oauth-fields">
+                                            <label class="modal-form-label" for="client-id-input">Connected App Consumer Key (Client ID)</label>
+                                            <input 
+                                                id="client-id-input"
+                                                type="text" 
+                                                class="modal-form-input code-font" 
+                                                value={customClientId} 
+                                                oninput={handleClientIdChange} />
+                                        </div>
+                                    </template>
+
+                                    <div class="oauth-launch-cta-row">
+                                        <button 
+                                            type="button" 
+                                            class="launch-oauth-button" 
+                                            onclick={handleStartOAuthPopupFlow} 
+                                            disabled={isConnectingOrg}>
+                                            <lightning-icon icon-name="utility:open" size="small" variant="inverse"></lightning-icon>
+                                            <span>Launch OAuth 2.0 Popup</span>
+                                        </button>
+                                    </div>
+                                </template>
+
+                                <!-- 3. MANUAL TOKEN INPUT -->
+                                <template if:true={isAuthMethodManual}>
+                                    <div class="setup-intro-banner">
+                                        <div class="banner-icon-col">
+                                            <lightning-icon icon-name="utility:password" size="medium" class="banner-icon"></lightning-icon>
+                                        </div>
+                                        <div class="banner-text-col">
+                                            <h4>Direct Bearer Token Connection</h4>
+                                            <p>Paste a pre-generated OAuth or Salesforce CLI session token (e.g. from <code>sf org display</code>).</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="modal-form-group">
+                                        <label class="modal-form-label" for="manual-instance-url">Instance URL</label>
+                                        <input 
+                                            id="manual-instance-url"
+                                            type="url" 
+                                            class="modal-form-input" 
+                                            placeholder="https://yourcompany.my.salesforce.com"
+                                            value={manualInstanceUrl} 
+                                            oninput={handleManualInstanceUrlChange} />
+                                    </div>
+                                    <div class="modal-form-group">
+                                        <label class="modal-form-label" for="manual-access-token">Session ID / Bearer Access Token</label>
+                                        <textarea 
+                                            id="manual-access-token"
+                                            class="modal-form-input token-textarea" 
+                                            placeholder="Paste OAuth access token or CLI session token here..."
+                                            value={manualAccessToken} 
+                                            oninput={handleManualAccessTokenChange} 
+                                            rows="2">
+                                        </textarea>
+                                    </div>
+                                    <button 
+                                        type="button" 
+                                        class="action-pill-btn manual-save-btn" 
+                                        onclick={handleSaveManualToken} 
+                                        disabled={isConnectingOrg}>
+                                        <lightning-icon icon-name="utility:save" size="xx-small"></lightning-icon>
+                                        <span>Save &amp; Connect Directly</span>
+                                    </button>
+                                </template>
+
+                                <div class="custom-modal-actions">
+                                    <button type="button" class="modal-btn-cancel" onclick={toggleOrgModal}>Cancel</button>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+
+                    <!-- TAB 2: STEP-BY-STEP EXTERNAL CLIENT APP GUIDE -->
+                    <template if:true={isOrgTabGuide}>
+                        <div class="eca-guide-scroll-container">
+                            <div class="guide-hero-banner">
+                                <div class="guide-hero-text">
+                                    <h4>External Client App (ECA) Configuration Guide</h4>
+                                    <p>Follow these 4 steps in your target Salesforce Org to create an External Client App with Client Credentials Flow for automated, secure AI model invocation.</p>
+                                </div>
+                                <span class="guide-hero-badge">Required for BYOO</span>
                             </div>
 
-                            <div class="org-details-grid">
-                                <div class="org-detail-cell">
-                                    <span class="org-cell-label">Instance URL</span>
-                                    <span class="org-cell-value link-text" title={connectedOrgInstanceUrl}>{connectedOrgInstanceUrl}</span>
+                            <!-- STEP 1 -->
+                            <div class="guide-step-card">
+                                <div class="step-card-header">
+                                    <span class="step-num-badge">1</span>
+                                    <div class="step-card-title-col">
+                                        <h5>Create the External Client App</h5>
+                                        <span class="step-path-sub">Target Org &rarr; Setup &rarr; External Client App Manager &rarr; New External Client App</span>
+                                    </div>
                                 </div>
-                                <div class="org-detail-cell">
-                                    <span class="org-cell-label">Connected Username</span>
-                                    <span class="org-cell-value">{connectedOrgUsername}</span>
-                                </div>
-                                <div class="org-detail-cell">
-                                    <span class="org-cell-label">Connected Since</span>
-                                    <span class="org-cell-value">{connectedOrgDateFormatted}</span>
-                                </div>
-                                <div class="org-detail-cell">
-                                    <span class="org-cell-label">AI Model Routing</span>
-                                    <span class="org-cell-value badge-routed">Org Einstein Models API</span>
+                                <div class="step-card-body">
+                                    <p>External Client Apps are the modern Salesforce standard replacing legacy Connected Apps for packaging and security policies.</p>
+                                    <div class="param-spec-table">
+                                        <div class="param-row">
+                                            <span class="param-key">Header / Basic Information</span>
+                                            <span class="param-val">App Name: <code>Einstein_AI_Bridge</code> | Contact Email: your email</span>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-key">Enable OAuth Settings</span>
+                                            <span class="param-val highlight">Check &quot;Enable OAuth Settings&quot;</span>
+                                        </div>
+                                        <div class="param-row">
+                                            <span class="param-key">Callback URL</span>
+                                            <div class="param-val-with-copy">
+                                                <code>https://login.salesforce.com/services/oauth2/success</code>
+                                                <button type="button" class="copy-inline-btn" data-copy="https://login.salesforce.com/services/oauth2/success" onclick={handleCopyText} title="Copy Callback URL">
+                                                    <lightning-icon icon-name="utility:copy" size="xx-small"></lightning-icon>
+                                                    <span>Copy</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="org-notice-box">
-                                <lightning-icon icon-name="utility:info" size="xx-small" class="notice-icon"></lightning-icon>
-                                <span>All your queries in this workspace will now execute callouts directly against <strong>{connectedOrgInstanceUrl}</strong> using your org's Einstein Generative Model API quota.</span>
+                            <!-- STEP 2 -->
+                            <div class="guide-step-card">
+                                <div class="step-card-header">
+                                    <span class="step-num-badge">2</span>
+                                    <div class="step-card-title-col">
+                                        <h5>Configure OAuth Scopes &amp; Enable Client Credentials</h5>
+                                        <span class="step-path-sub">OAuth Settings Section</span>
+                                    </div>
+                                </div>
+                                <div class="step-card-body">
+                                    <p>Grant the required API and AI execution scopes, and enable the machine-to-machine flow:</p>
+                                    <div class="scope-tags-container">
+                                        <div class="scope-tag-item">
+                                            <span class="scope-code">Manage user data via APIs (api)</span>
+                                            <span class="scope-desc">Allows REST and Models API callouts</span>
+                                        </div>
+                                        <div class="scope-tag-item">
+                                            <span class="scope-code">Perform requests at any time (refresh_token, offline_access)</span>
+                                            <span class="scope-desc">Allows persistent token refresh</span>
+                                        </div>
+                                        <div class="scope-tag-item highlight-ai">
+                                            <span class="scope-code">Access Einstein Generative AI services (einstein_gpt_api)</span>
+                                            <span class="scope-desc">Authorizes access to Einstein Models endpoint</span>
+                                        </div>
+                                    </div>
+                                    <div class="callout-alert info-callout">
+                                        <lightning-icon icon-name="utility:check" size="x-small"></lightning-icon>
+                                        <div>
+                                            <strong>Checkbox Requirement:</strong> Scroll to OAuth flow settings and check <strong>&quot;Enable Client Credentials Flow&quot;</strong>. Click <strong>Save</strong>.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <template if:true={testConnectionResult}>
-                                <div class="connection-test-result-box">
-                                    <code>{testConnectionResult}</code>
+                            <!-- STEP 3 -->
+                            <div class="guide-step-card warning-step">
+                                <div class="step-card-header">
+                                    <span class="step-num-badge warn-badge">3</span>
+                                    <div class="step-card-title-col">
+                                        <h5>Set Policies &amp; Assign Execution User (CRITICAL)</h5>
+                                        <span class="step-path-sub">Setup &rarr; External Client App Policies &rarr; [Your App] &rarr; Edit Policies</span>
+                                    </div>
                                 </div>
-                            </template>
+                                <div class="step-card-body">
+                                    <div class="callout-alert warning-callout">
+                                        <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
+                                        <div>
+                                            <strong>Common Setup Blocker:</strong> Client Credentials Flow will fail with <code>invalid_grant: user not entitled</code> unless an <strong>Execution User</strong> is configured!
+                                        </div>
+                                    </div>
+                                    <ul class="guide-steps-list">
+                                        <li>Navigate to <strong>Setup &rarr; External Client App Policies</strong> (or click <strong>Policies</strong> on your ECA).</li>
+                                        <li>Under <strong>OAuth Policies</strong>, ensure <em>Permitted Users</em> is set to <strong>&quot;Admin approved users are pre-authorized&quot;</strong>.</li>
+                                        <li>In <strong>Execution User</strong>, select an active Salesforce Administrator or dedicated Integration User account.</li>
+                                        <li>Under <strong>Profiles / Permission Sets</strong>, assign the <strong>System Administrator</strong> profile or a permission set granting API and Einstein Generative AI permissions.</li>
+                                        <li>Click <strong>Save</strong>.</li>
+                                    </ul>
+                                </div>
+                            </div>
 
-                            <div class="custom-modal-actions org-connected-actions">
-                                <button type="button" class="action-pill-btn test-conn-btn" onclick={handleTestConnection} disabled={isTestingConnection}>
-                                    <lightning-icon icon-name="utility:connected_apps" size="xx-small"></lightning-icon>
-                                    <span>{testConnectionButtonLabel}</span>
-                                </button>
-                                <button type="button" class="action-pill-btn disconnect-org-btn" onclick={handleDisconnectOrg} disabled={isDisconnectingOrg}>
-                                    <lightning-icon icon-name="utility:logout" size="xx-small"></lightning-icon>
-                                    <span>Disconnect Org</span>
-                                </button>
-                                <button type="button" class="modal-btn-cancel" onclick={toggleOrgModal}>Close</button>
+                            <!-- STEP 4 -->
+                            <div class="guide-step-card">
+                                <div class="step-card-header">
+                                    <span class="step-num-badge">4</span>
+                                    <div class="step-card-title-col">
+                                        <h5>Retrieve Consumer Key &amp; Consumer Secret</h5>
+                                        <span class="step-path-sub">External Client App Manager &rarr; [Your App] &rarr; Settings &rarr; Consumer Key and Secret</span>
+                                    </div>
+                                </div>
+                                <div class="step-card-body">
+                                    <p>Copy the credentials and enter them in Tab 1 (Connection Setup):</p>
+                                    <div class="credentials-summary-grid">
+                                        <div class="cred-item-box">
+                                            <span class="cred-item-title">Consumer Key (Client ID)</span>
+                                            <span class="cred-item-hint">Public string identifying your app</span>
+                                        </div>
+                                        <div class="cred-item-box">
+                                            <span class="cred-item-title">Consumer Secret</span>
+                                            <span class="cred-item-hint">Click &quot;Manage Consumer Details&quot; to reveal</span>
+                                        </div>
+                                        <div class="cred-item-box">
+                                            <span class="cred-item-title">My Domain URL</span>
+                                            <span class="cred-item-hint">e.g. <code>https://yourdomain.develop.my.salesforce.com</code></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="guide-ready-cta-row">
+                                        <button type="button" class="ready-connect-btn" data-tab="connect" onclick={handleSelectOrgModalTab}>
+                                            <lightning-icon icon-name="utility:forward" size="xx-small" variant="inverse"></lightning-icon>
+                                            <span>Ready! Go to Connection Form</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </template>
 
-                    <!-- NOT CONNECTED STATE (FULL OAUTH 2.0 FLOW) -->
-                    <template if:false={isUserOrgConnected}>
-                        <div class="org-connect-setup-container">
-                            <!-- Connection Method Switcher Tabs -->
-                            <div class="auth-method-tabs-bar">
-                                <button type="button" class={clientCredsTabClass} data-method="client_credentials" onclick={handleSelectAuthMethod}>
-                                    <lightning-icon icon-name="utility:key" size="xx-small"></lightning-icon>
-                                    <span>Client Credentials (ECA)</span>
-                                </button>
-                                <button type="button" class={popupFlowTabClass} data-method="popup_flow" onclick={handleSelectAuthMethod}>
-                                    <lightning-icon icon-name="utility:open" size="xx-small"></lightning-icon>
-                                    <span>OAuth 2.0 Popup Flow</span>
-                                </button>
-                                <button type="button" class={manualTabClass} data-method="manual_token" onclick={handleSelectAuthMethod}>
-                                    <lightning-icon icon-name="utility:password" size="xx-small"></lightning-icon>
-                                    <span>Manual Token</span>
-                                </button>
+                    <!-- TAB 3: EINSTEIN AI & TRUST LAYER ARCHITECTURE -->
+                    <template if:true={isOrgTabEinstein}>
+                        <div class="einstein-deep-dive-container">
+                            <div class="einstein-hero-banner">
+                                <div class="einstein-hero-avatar">
+                                    <lightning-icon icon-name="utility:einstein" size="medium" class="einstein-header-icon"></lightning-icon>
+                                </div>
+                                <div class="einstein-hero-text">
+                                    <h4>Salesforce Einstein 1 Platform &amp; Models API</h4>
+                                    <p>How Bring-Your-Own-Org routing connects your chat sessions directly to Salesforce's enterprise-grade Generative AI Gateway.</p>
+                                </div>
                             </div>
 
-                            <!-- 1. CLIENT CREDENTIALS FLOW (RECOMMENDED & PERMANENT) -->
-                            <template if:true={isAuthMethodClientCredentials}>
-                                <div class="setup-intro-banner">
-                                    <div class="banner-icon-col">
-                                        <lightning-icon icon-name="utility:shield" size="medium" class="banner-icon"></lightning-icon>
+                            <!-- TRUST LAYER ARCHITECTURE HIGHLIGHTS -->
+                            <div class="einstein-grid-features">
+                                <div class="einstein-feature-card">
+                                    <div class="feat-icon-badge trust-badge">
+                                        <lightning-icon icon-name="utility:shield" size="small"></lightning-icon>
                                     </div>
-                                    <div class="banner-text-col">
-                                        <h4>External Client App (Client Credentials Flow)</h4>
-                                        <p>Direct machine-to-machine authentication with Org 2. Generates JWT access tokens with automatic background renewal and zero session expirations.</p>
+                                    <h5>Einstein Trust Layer</h5>
+                                    <p>Every prompt passes through automated <strong>Data Masking (PII / Sensitive Data)</strong>, <strong>Toxicity Detection</strong>, and <strong>Zero-Retention Agreement</strong> with foundation model providers.</p>
+                                    <span class="feat-subtext">&bull; Data never leaves your governance perimeter</span>
+                                </div>
+
+                                <div class="einstein-feature-card">
+                                    <div class="feat-icon-badge models-badge">
+                                        <lightning-icon icon-name="utility:flow" size="small"></lightning-icon>
                                     </div>
+                                    <h5>Native Models API (v63.0+)</h5>
+                                    <p>Connects via <code>/services/data/v63.0/einstein/ai/models/generate-text</code>. Unified API gateway supporting multi-vendor LLMs without requiring external API keys.</p>
+                                    <span class="feat-subtext">&bull; Anthropic, OpenAI, Google, NVIDIA, &amp; Salesforce xGen</span>
                                 </div>
 
-                                <div class="modal-form-group">
-                                    <label class="modal-form-label" for="eca-instance-url">Org 2 My Domain URL *</label>
-                                    <input 
-                                        id="eca-instance-url"
-                                        type="url" 
-                                        class="modal-form-input" 
-                                        placeholder="https://yourcompany.develop.my.salesforce.com"
-                                        value={ecaInstanceUrl} 
-                                        oninput={handleEcaInstanceUrlChange} />
-                                    <span class="field-subtext">The My Domain URL of Org 2 where your External Client App is configured.</span>
-                                </div>
-
-                                <div class="modal-form-group">
-                                    <label class="modal-form-label" for="eca-client-id">Consumer Key (Client ID) *</label>
-                                    <input 
-                                        id="eca-client-id"
-                                        type="text" 
-                                        class="modal-form-input code-font" 
-                                        placeholder="Enter Consumer Key from External Client App"
-                                        value={ecaClientId} 
-                                        oninput={handleEcaClientIdChange} />
-                                    <span class="field-subtext">Found in Org 2 Setup -> External Client App Manager -> Settings -> Consumer Key and Secret.</span>
-                                </div>
-
-                                <div class="modal-form-group">
-                                    <label class="modal-form-label" for="eca-client-secret">Consumer Secret *</label>
-                                    <input 
-                                        id="eca-client-secret"
-                                        type="password" 
-                                        class="modal-form-input code-font" 
-                                        placeholder="Enter Consumer Secret"
-                                        value={ecaClientSecret} 
-                                        oninput={handleEcaClientSecretChange} />
-                                    <span class="field-subtext">Found in Org 2 Setup -> External Client App Manager -> Settings -> Consumer Key and Secret.</span>
-                                </div>
-
-                                <div class="oauth-launch-cta-row">
-                                    <button 
-                                        type="button" 
-                                        class="launch-oauth-button" 
-                                        onclick={handleConnectClientCredentials} 
-                                        disabled={isConnectingOrg}>
-                                        <lightning-icon icon-name="utility:connected_apps" size="small" variant="inverse"></lightning-icon>
-                                        <span>Connect via Client Credentials</span>
-                                    </button>
-                                    <span class="oauth-cta-hint">Directly authenticates with Org 2 via <code>grant_type=client_credentials</code> and mints a JWT session.</span>
-                                </div>
-                            </template>
-
-                            <!-- 2. OAUTH POPUP FLOW -->
-                            <template if:true={isAuthMethodPopupFlow}>
-                                <div class="setup-intro-banner">
-                                    <div class="banner-icon-col">
-                                        <lightning-icon icon-name="utility:world" size="medium" class="banner-icon"></lightning-icon>
+                                <div class="einstein-feature-card">
+                                    <div class="feat-icon-badge credits-badge">
+                                        <lightning-icon icon-name="utility:money" size="small"></lightning-icon>
                                     </div>
-                                    <div class="banner-text-col">
-                                        <h4>Interactive Browser OAuth 2.0 Popup</h4>
-                                        <p>Authenticate interactively in a browser popup with your Salesforce credentials.</p>
+                                    <h5>Enterprise AI Credits &amp; Quotas</h5>
+                                    <p>Calls consume the connected Org's <strong>Einstein Requests Monthly Limit</strong> (tracked under <code>CdpAiInferenceApiMonthlyLimit</code>). Bypasses personal credit cards and personal OpenAI keys.</p>
+                                    <span class="feat-subtext">&bull; Billed directly against Salesforce Enterprise contract</span>
+                                </div>
+
+                                <div class="einstein-feature-card">
+                                    <div class="feat-icon-badge grounding-badge">
+                                        <lightning-icon icon-name="utility:database" size="small"></lightning-icon>
+                                    </div>
+                                    <h5>Secure Org Grounding</h5>
+                                    <p>Supports live Salesforce Data Grounding, CRM object enrichment, Tooling API metadata synthesis, and unified Vector Search via Data Cloud.</p>
+                                    <span class="feat-subtext">&bull; Contextual AI grounded in actual CRM truth</span>
+                                </div>
+                            </div>
+
+                            <!-- SUPPORTED FOUNDATION MODELS TABLE -->
+                            <div class="models-showcase-card">
+                                <div class="showcase-card-header">
+                                    <lightning-icon icon-name="utility:magicwand" size="x-small"></lightning-icon>
+                                    <h5>Supported Models in Einstein Model Gateway</h5>
+                                </div>
+                                <div class="models-chip-grid">
+                                    <div class="model-spec-chip">
+                                        <span class="model-chip-vendor">OpenAI</span>
+                                        <span class="model-chip-name">GPT-4 Omni &amp; Mini</span>
+                                        <span class="model-chip-endpoint">sfdc_ai__DefaultGPT4Omni</span>
+                                    </div>
+                                    <div class="model-spec-chip">
+                                        <span class="model-chip-vendor">Anthropic</span>
+                                        <span class="model-chip-name">Claude 3.5 &amp; 4 Sonnet</span>
+                                        <span class="model-chip-endpoint">sfdc_ai__DefaultBedrockAnthropicClaude4Sonnet</span>
+                                    </div>
+                                    <div class="model-spec-chip">
+                                        <span class="model-chip-vendor">Google Vertex</span>
+                                        <span class="model-chip-name">Gemini 1.5 &amp; 2.5 Flash/Pro</span>
+                                        <span class="model-chip-endpoint">sfdc_ai__DefaultVertexAIGemini25Flash001</span>
+                                    </div>
+                                    <div class="model-spec-chip">
+                                        <span class="model-chip-vendor">NVIDIA</span>
+                                        <span class="model-chip-name">Nemotron Nano 30B</span>
+                                        <span class="model-chip-endpoint">sfdc_ai__DefaultBedrockNvidiaNemotronNano330b</span>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="modal-form-group">
-                                    <label class="modal-form-label">Salesforce Environment</label>
-                                    <div class="env-toggle-pills">
-                                        <button 
-                                            type="button" 
-                                            class={productionEnvBtnClass} 
-                                            data-env="production" 
-                                            onclick={handleSelectOAuthEnv}>
-                                            <lightning-icon icon-name="utility:world" size="xx-small"></lightning-icon>
-                                            <span>Production / Dev</span>
-                                        </button>
-                                        <button 
-                                            type="button" 
-                                            class={sandboxEnvBtnClass} 
-                                            data-env="sandbox" 
-                                            onclick={handleSelectOAuthEnv}>
-                                            <lightning-icon icon-name="utility:custom_apps" size="xx-small"></lightning-icon>
-                                            <span>Sandbox</span>
-                                        </button>
-                                        <button 
-                                            type="button" 
-                                            class={customEnvBtnClass} 
-                                            data-env="custom" 
-                                            onclick={handleSelectOAuthEnv}>
-                                            <lightning-icon icon-name="utility:company" size="xx-small"></lightning-icon>
-                                            <span>My Domain</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <template if:true={isCustomEnvSelected}>
-                                    <div class="modal-form-group">
-                                        <label class="modal-form-label" for="custom-domain-url">Custom My Domain URL</label>
-                                        <input 
-                                            id="custom-domain-url"
-                                            type="url" 
-                                            class="modal-form-input" 
-                                            placeholder="https://yourcompany.my.salesforce.com"
-                                            value={customLoginUrl} 
-                                            oninput={handleCustomLoginUrlChange} />
-                                    </div>
-                                </template>
-
-                                <div class="advanced-oauth-toggle" onclick={toggleAdvancedOAuth}>
-                                    <span>Advanced: Connected App Client ID</span>
-                                    <lightning-icon icon-name={advancedOAuthChevronIcon} size="xx-small"></lightning-icon>
-                                </div>
-                                <template if:true={showAdvancedOAuth}>
-                                    <div class="modal-form-group advanced-oauth-fields">
-                                        <label class="modal-form-label" for="client-id-input">Connected App Consumer Key (Client ID)</label>
-                                        <input 
-                                            id="client-id-input"
-                                            type="text" 
-                                            class="modal-form-input code-font" 
-                                            value={customClientId} 
-                                            oninput={handleClientIdChange} />
-                                    </div>
-                                </template>
-
-                                <div class="oauth-launch-cta-row">
-                                    <button 
-                                        type="button" 
-                                        class="launch-oauth-button" 
-                                        onclick={handleStartOAuthPopupFlow} 
-                                        disabled={isConnectingOrg}>
-                                        <lightning-icon icon-name="utility:open" size="small" variant="inverse"></lightning-icon>
-                                        <span>Launch OAuth 2.0 Authorization Window</span>
-                                    </button>
-                                </div>
-                            </template>
-
-                            <!-- 3. MANUAL TOKEN INPUT -->
-                            <template if:true={isAuthMethodManual}>
-                                <div class="setup-intro-banner">
-                                    <div class="banner-icon-col">
-                                        <lightning-icon icon-name="utility:password" size="medium" class="banner-icon"></lightning-icon>
-                                    </div>
-                                    <div class="banner-text-col">
-                                        <h4>Direct Bearer Token Connection</h4>
-                                        <p>Paste a pre-generated OAuth or CLI session token directly.</p>
-                                    </div>
-                                </div>
-
-                                <div class="modal-form-group">
-                                    <label class="modal-form-label" for="manual-instance-url">Instance URL</label>
-                                    <input 
-                                        id="manual-instance-url"
-                                        type="url" 
-                                        class="modal-form-input" 
-                                        placeholder="https://yourcompany.my.salesforce.com"
-                                        value={manualInstanceUrl} 
-                                        oninput={handleManualInstanceUrlChange} />
-                                </div>
-                                <div class="modal-form-group">
-                                    <label class="modal-form-label" for="manual-access-token">Session ID / Bearer Access Token</label>
-                                    <textarea 
-                                        id="manual-access-token"
-                                        class="modal-form-input token-textarea" 
-                                        placeholder="Paste OAuth access token or CLI session token here..."
-                                        value={manualAccessToken} 
-                                        oninput={handleManualAccessTokenChange} 
-                                        rows="2">
-                                    </textarea>
-                                </div>
-                                <button 
-                                    type="button" 
-                                    class="action-pill-btn manual-save-btn" 
-                                    onclick={handleSaveManualToken} 
-                                    disabled={isConnectingOrg}>
-                                    <lightning-icon icon-name="utility:save" size="xx-small"></lightning-icon>
-                                    <span>Save &amp; Connect Directly</span>
-                                </button>
-                            </template>
-
-                            <div class="custom-modal-actions">
-                                <button type="button" class="modal-btn-cancel" onclick={toggleOrgModal}>Cancel</button>
+                            <!-- CALLOUT FOOTER -->
+                            <div class="callout-alert einstein-bottom-callout">
+                                <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                                <span>Once connected, switch between these models in real time from the <strong>Model Selector</strong> dropdown in the top chat toolbar.</span>
                             </div>
                         </div>
                     </template>

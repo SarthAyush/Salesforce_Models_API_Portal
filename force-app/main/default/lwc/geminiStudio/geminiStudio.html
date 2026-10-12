@@ -1,0 +1,704 @@
+<template>
+    <div class="gemini-container">
+        <!-- HEADER -->
+        <header class="gemini-header">
+            <div class="header-brand">
+                <div class="gemini-spark-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2L14.4 7.6L20 10L14.4 12.4L12 18L9.6 12.4L4 10L9.6 7.6L12 2Z"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>
+                        {componentTitle}
+                        <span class="version-badge">v3.8 Flash</span>
+                    </h1>
+                    <p class="brand-subtitle">Google Gemini Integrated Salesforce Intelligence</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <!-- Model Selector (Only Gemini 3.8 Flash and 3.5 Flash) -->
+                <div class="model-selector-wrapper">
+                    <select class="model-select" onchange={handleModelChange}>
+                        <template for:each={availableModels} for:item="m">
+                            <option key={m.value} value={m.value} selected={m.selected}>{m.label}</option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Custom Setting Status Pill -->
+                <div class={statusPillClass} onclick={openSettingsModal} title="Click to configure Gemini API Key in Custom Setting">
+                    <span class="status-dot"></span>
+                    <span>{statusPillText}</span>
+                </div>
+
+                <!-- Export Chat -->
+                <button class="icon-button" onclick={handleExportChat} title="Export Conversation">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                </button>
+
+                <!-- Clear / Reset Chat -->
+                <button class="icon-button" onclick={handleClearChat} title="New Chat">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                </button>
+
+                <!-- Settings Gear -->
+                <button class="icon-button" onclick={openSettingsModal} title="Gemini Settings & Custom Setting">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- RECORD GROUNDING CONTEXT BAR -->
+        <div class="grounding-bar">
+            <div class="grounding-info">
+                <template if:true={activeRecordName}>
+                    <span class="record-pill" title="Currently grounded with this record">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        {activeRecordType}: {activeRecordName}
+                    </span>
+                    <button class="clear-pill-btn" onclick={handleClearGroundedRecord} title="Clear Grounding to Global Org Context">
+                        &times;
+                    </button>
+                </template>
+                <template if:false={activeRecordName}>
+                    <span class="record-pill global">
+                        🌐 Global CRM & Tooling Context (Org-Wide Access)
+                    </span>
+                </template>
+                <button class="action-pill-btn" onclick={openRecordSearchModal}>
+                    🔍 Search & Ground Records / Tooling
+                </button>
+            </div>
+
+            <label class="grounding-toggle">
+                <input type="checkbox" checked={includeRecordContext} onchange={handleToggleGrounding}/>
+                <span>Ground with Record / Tooling Context</span>
+            </label>
+        </div>
+
+        <!-- QUICK PLAYBOOKS / STARTERS -->
+        <div class="playbooks-carousel">
+            <template for:each={playbookTemplates} for:item="pb">
+                <div key={pb.id} class="playbook-chip" onclick={handlePlaybookClick} data-prompt={pb.prompt}>
+                    <span>{pb.icon}</span>
+                    <span>{pb.label}</span>
+                </div>
+            </template>
+        </div>
+
+        <!-- CHAT AREA -->
+        <div class="gemini-chat-area">
+            <!-- Welcome Screen (Chat Empty) -->
+            <template if:true={isChatEmpty}>
+                <div class="welcome-screen">
+                    <div class="welcome-logo">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2L14.4 7.6L20 10L14.4 12.4L12 18L9.6 12.4L4 10L9.6 7.6L12 2Z"/>
+                        </svg>
+                    </div>
+                    <h2>How can Google Gemini assist you?</h2>
+                    <p>Experience multimodal reasoning, live Salesforce data access, automated SOQL queries, and CRM intelligence powered by Google Gemini API.</p>
+
+                    <div class="features-grid">
+                        <div class="feature-card" onclick={handleCardPrompt} data-prompt="Analyze my open opportunities in this org, summarize pipeline health, and suggest deal close strategies.">
+                            <div class="feature-title">📊 Live CRM Data & Pipeline Audit</div>
+                            <div class="feature-desc">Directly query Salesforce opportunities, forecast revenue, and identify deal risks.</div>
+                        </div>
+                        <div class="feature-card" onclick={handleCardPrompt} data-prompt="Write and run a SOQL query to show all open Cases with High priority and their Account names.">
+                            <div class="feature-title">⚡ Autonomous SOQL Data Access</div>
+                            <div class="feature-desc">Generate SOQL from natural language and display live records directly in the chat.</div>
+                        </div>
+                        <div class="feature-card" onclick={handleCardPrompt} data-prompt="Generate an Apex Trigger Handler pattern for Account with bulkified logic and accompanying unit test class.">
+                            <div class="feature-title">💻 Apex & Flow Blueprints</div>
+                            <div class="feature-desc">Write enterprise Apex, trigger frameworks, and flow formulas with one-click code copy.</div>
+                        </div>
+                        <div class="feature-card" onclick={handleCardPrompt} data-prompt="Upload an invoice, receipt, diagram, or business card image for Gemini multimodal analysis and data extraction.">
+                            <div class="feature-title">🖼️ Multimodal Vision & OCR</div>
+                            <div class="feature-desc">Analyze attached images, business cards, diagrams, and invoices with visual intelligence.</div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Rendered Messages List -->
+            <div class="messages-list">
+                <template for:each={messages} for:item="msg">
+                    <!-- SENDER / USER MESSAGE ROW -->
+                    <template if:true={msg.isUser}>
+                        <div key={msg.id} class="message-row user-row">
+                            <div class="user-bubble-wrapper">
+                                <!-- Image Attachment Preview inside user message -->
+                                <template if:true={msg.mediaPreview}>
+                                    <div class="attachment-preview-chip">
+                                        <img src={msg.mediaPreview} alt="Attached Media"/>
+                                        <span>{msg.mediaName}</span>
+                                    </div>
+                                </template>
+                                <div class="user-bubble">
+                                    <p class="user-message-text">{msg.rawText}</p>
+                                </div>
+                            </div>
+                            <div class="user-avatar" title="You">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- RECEIVER / GEMINI ASSISTANT MESSAGE ROW -->
+                    <template if:false={msg.isUser}>
+                        <div key={msg.id} class="message-row model-row">
+                            <div class="model-avatar" title="Gemini Assistant">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff">
+                                    <path d="M12 2L14.4 7.6L20 10L14.4 12.4L12 18L9.6 12.4L4 10L9.6 7.6L12 2Z"/>
+                                </svg>
+                            </div>
+
+                            <div class="model-bubble">
+                                <!-- Model Card Header -->
+                                <div class="model-card-header">
+                                    <div class="model-identity">
+                                        <span class="model-brand-name">Gemini</span>
+                                        <span class="model-tag-pill">3.8 Flash</span>
+                                    </div>
+                                    <div class="model-header-actions">
+                                        <button class="icon-subtle-btn" onclick={handleCopyFullResponse} data-text={msg.rawText} title="Copy response">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </button>
+                                        <button class="icon-subtle-btn" onclick={handleToggleSpeech} data-text={msg.rawText} title="Listen / Stop Voice">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Formatted Content Blocks -->
+                                <template for:each={msg.blocks} for:item="blk">
+                                    <!-- Code Block -->
+                                    <template if:true={blk.isCode}>
+                                        <div key={blk.id} class="code-block-wrapper">
+                                            <div class="code-header">
+                                                <span>{blk.language}</span>
+                                                <div class="code-actions">
+                                                    <button class="copy-code-btn" onclick={handleCopyCode} data-code={blk.content}>Copy Code</button>
+                                                </div>
+                                            </div>
+                                            <pre class="code-content">{blk.content}</pre>
+                                        </div>
+                                    </template>
+
+                                    <!-- Table Block -->
+                                    <template if:true={blk.isTable}>
+                                        <div key={blk.id} class="rich-table-wrapper">
+                                            <table class="rich-table">
+                                                <thead>
+                                                    <tr>
+                                                        <template for:each={blk.tableData.headers} for:item="h">
+                                                            <th key={h}>{h}</th>
+                                                        </template>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <template for:each={blk.tableData.rows} for:item="tr">
+                                                        <tr key={tr.id}>
+                                                            <template for:each={tr.cells} for:item="tc">
+                                                                <td key={tc}>{tc}</td>
+                                                            </template>
+                                                        </tr>
+                                                    </template>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </template>
+
+                                    <!-- Rich Text Block -->
+                                    <template if:true={blk.isText}>
+                                        <div key={blk.id} class="text-content">
+                                            <lightning-formatted-rich-text value={blk.html}></lightning-formatted-rich-text>
+                                        </div>
+                                    </template>
+                                </template>
+
+                                <!-- LIVE SALESFORCE DATA RESULTS (when SOQL was executed) -->
+                                <template if:true={msg.queryResults}>
+                                    <div class="data-results-card">
+                                        <div class="data-results-header">
+                                            <span class="data-badge">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                                                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                                                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                                                </svg>
+                                                Salesforce Live Records ({msg.queryResults.totalCount})
+                                            </span>
+                                            <button class="action-pill-btn" onclick={handleExportResultsCsv} data-msg-id={msg.id}>
+                                                📥 Export CSV
+                                            </button>
+                                        </div>
+                                        <div class="data-table-scroll">
+                                            <table class="rich-table">
+                                                <thead>
+                                                    <tr>
+                                                        <template for:each={msg.queryResults.columns} for:item="col">
+                                                            <th key={col}>{col}</th>
+                                                        </template>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <template for:each={msg.queryResults.formattedRows} for:item="row">
+                                                        <tr key={row.rowId}>
+                                                            <template for:each={row.cells} for:item="cell">
+                                                                <td key={cell.col}>
+                                                                    <template if:true={cell.isLink}>
+                                                                        <a href={cell.linkUrl} target="_blank" class="rich-link">{cell.value}</a>
+                                                                    </template>
+                                                                    <template if:false={cell.isLink}>
+                                                                        <span>{cell.value}</span>
+                                                                    </template>
+                                                                </td>
+                                                            </template>
+                                                        </tr>
+                                                    </template>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Model Message Footer Actions -->
+                                <div class="model-footer-actions">
+                                    <template if:true={msg.extractedSoql}>
+                                        <button class="action-pill-btn accent" onclick={handleRunExtractedSoql} data-soql={msg.extractedSoql}>
+                                            ⚡ Run SOQL
+                                        </button>
+                                    </template>
+                                    <button class="action-pill-btn" onclick={handleOpenTaskModalFromMsg} data-text={msg.rawText}>
+                                        ➕ Create Task
+                                    </button>
+                                    <template if:true={msg.stats}>
+                                        <span class="stats-text">• {msg.stats}</span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+            </div>
+
+            <!-- Loading Indicator -->
+            <template if:true={isLoading}>
+                <div class="message-row model-row">
+                    <div class="model-avatar" title="Gemini Assistant">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff">
+                            <path d="M12 2L14.4 7.6L20 10L14.4 12.4L12 18L9.6 12.4L4 10L9.6 7.6L12 2Z"/>
+                        </svg>
+                    </div>
+                    <div class="model-bubble loading-bubble">
+                        <div class="typing-indicator">
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-text">Gemini is reasoning & querying Salesforce...</span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- ATTACHMENT TRAY -->
+        <template if:true={attachedMedia}>
+            <div class="media-preview-tray">
+                <div class="media-preview-card">
+                    <template if:true={attachedMedia.isImage}>
+                        <img src={attachedMedia.previewUrl} alt="Thumbnail" class="media-thumbnail"/>
+                    </template>
+                    <span>{attachedMedia.fileName} ({attachedMedia.fileSizeFormatted})</span>
+                    <button class="remove-media-btn" onclick={handleRemoveMedia} title="Remove attachment">&times;</button>
+                </div>
+            </div>
+        </template>
+
+        <!-- COMPOSER -->
+        <footer class="gemini-composer">
+            <div class="composer-box">
+                <textarea
+                    class="composer-input"
+                    placeholder="Ask Gemini to query Salesforce, write Apex/SOQL, analyze records, or attach images..."
+                    rows="1"
+                    value={inputPrompt}
+                    oninput={handleInputChange}
+                    onkeydown={handleKeyDown}
+                ></textarea>
+
+                <div class="composer-actions">
+                    <!-- File / Image Upload Button -->
+                    <button class="composer-btn" onclick={handleTriggerFileUpload} title="Attach image or document">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                        </svg>
+                    </button>
+                    <input type="file" class="hidden-file-input" onchange={handleFileSelected} accept="image/*,.pdf,.txt,.csv,.json"/>
+
+                    <!-- Voice Mic Button -->
+                    <button class={micButtonClass} onclick={handleToggleMic} title="Voice Dictation">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="23"/>
+                            <line x1="8" y1="23" x2="16" y2="23"/>
+                        </svg>
+                    </button>
+
+                    <!-- Send Button -->
+                    <button class="send-btn" onclick={handleSendMessage} disabled={isSendDisabled} title="Send prompt (Enter)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </footer>
+
+        <!-- MODAL: SETTINGS & CUSTOM SETTING MANAGER -->
+        <template if:true={showSettingsModal}>
+            <div class="modal-overlay">
+                <div class="modal-dialog">
+                    <div class="modal-header">
+                        <h2>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                            Gemini API & Custom Setting Configuration
+                        </h2>
+                        <button class="close-modal-btn" onclick={closeSettingsModal}>&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- Custom Setting Info Pill -->
+                        <div class="form-group">
+                            <span class={statusPillClass}>
+                                <span class="status-dot"></span>
+                                <span>{customSettingStatusText}</span>
+                            </span>
+                            <div class="form-help">Stored securely in Salesforce Custom Setting: <code>Gemini_Settings__c</code></div>
+                        </div>
+
+                        <!-- API Key Input -->
+                        <div class="form-group">
+                            <label class="form-label">Google Gemini API Key</label>
+                            <input
+                                type="password"
+                                class="form-control"
+                                placeholder="Paste AIzaSy... API key from Google AI Studio"
+                                value={settingsApiKey}
+                                oninput={handleSettingsApiKeyChange}
+                            />
+                            <div class="form-help">Get your API Key from <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #38bdf8;">Google AI Studio</a>.</div>
+                        </div>
+
+                        <!-- Default Model Dropdown (Only 3.8 Flash & 3.5 Flash) -->
+                        <div class="form-group">
+                            <label class="form-label">Default Model</label>
+                            <select class="form-control" value={settingsDefaultModel} onchange={handleSettingsModelChange}>
+                                <template for:each={availableModels} for:item="m">
+                                    <option key={m.value} value={m.value}>{m.label}</option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <!-- Endpoint URL -->
+                        <div class="form-group">
+                            <label class="form-label">API Endpoint URL</label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                value={settingsEndpointUrl}
+                                oninput={handleSettingsEndpointChange}
+                            />
+                        </div>
+
+                        <!-- Temperature Slider -->
+                        <div class="form-group">
+                            <label class="form-label">Temperature: {settingsTemperature}</label>
+                            <input
+                                type="range"
+                                min="0.0"
+                                max="2.0"
+                                step="0.1"
+                                class="form-control"
+                                value={settingsTemperature}
+                                oninput={handleSettingsTemperatureChange}
+                            />
+                            <div class="form-help">Lower values (0.2) are more factual and deterministic; higher (1.0+) are more creative.</div>
+                        </div>
+
+                        <!-- Max Output Tokens -->
+                        <div class="form-group">
+                            <label class="form-label">Max Output Tokens</label>
+                            <input
+                                type="number"
+                                class="form-control"
+                                value={settingsMaxTokens}
+                                oninput={handleSettingsMaxTokensChange}
+                            />
+                        </div>
+
+                        <!-- System Instruction -->
+                        <div class="form-group">
+                            <label class="form-label">System Instruction (Enterprise Persona)</label>
+                            <textarea
+                                class="form-control"
+                                rows="3"
+                                value={settingsSystemPrompt}
+                                oninput={handleSettingsSystemPromptChange}
+                            ></textarea>
+                        </div>
+
+                        <!-- Connection Test Result Alert -->
+                        <template if:true={testResult}>
+                            <div class="form-group">
+                                <div style={testResultStyle}>
+                                    <strong>{testResult.title}</strong>
+                                    <p style="margin: 4px 0 0 0; font-size: 0.78rem;">{testResult.message}</p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn-secondary" onclick={handleTestConnection} disabled={isTestingConnection}>
+                            <template if:true={isTestingConnection}>Testing...</template>
+                            <template if:false={isTestingConnection}>⚡ Test Connection</template>
+                        </button>
+                        <button class="btn-primary" onclick={handleSaveSettings} disabled={isSavingSettings}>
+                            <template if:true={isSavingSettings}>Saving...</template>
+                            <template if:false={isSavingSettings}>Save to Custom Setting</template>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- MODAL: SOQL RUNNER & DATA VIEWER -->
+        <template if:true={showSoqlModal}>
+            <div class="modal-overlay">
+                <div class="modal-dialog" style="max-width: 850px;">
+                    <div class="modal-header">
+                        <h2>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                            </svg>
+                            SOQL Live Data Explorer ({soqlResultCount} records)
+                        </h2>
+                        <button class="close-modal-btn" onclick={closeSoqlModal}>&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- Query text box -->
+                        <div class="form-group">
+                            <label class="form-label">Query Executed</label>
+                            <pre class="code-content" style="border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.2);">{activeSoqlQuery}</pre>
+                        </div>
+
+                        <!-- Table -->
+                        <template if:true={hasSoqlRows}>
+                            <div class="soql-table-container">
+                                <table class="rich-table">
+                                    <thead>
+                                        <tr>
+                                            <template for:each={soqlColumns} for:item="col">
+                                                <th key={col}>{col}</th>
+                                            </template>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template for:each={soqlRows} for:item="row">
+                                            <tr key={row.rowId}>
+                                                <template for:each={row.cells} for:item="cell">
+                                                    <td key={cell.col}>
+                                                        <template if:true={cell.isLink}>
+                                                            <a href={cell.linkUrl} target="_blank" class="rich-link">{cell.value}</a>
+                                                        </template>
+                                                        <template if:false={cell.isLink}>
+                                                            <span>{cell.value}</span>
+                                                        </template>
+                                                    </td>
+                                                </template>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+
+                        <template if:false={hasSoqlRows}>
+                            <p style="color: #94a3b8; text-align: center; padding: 20px;">No records found matching this query.</p>
+                        </template>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn-secondary" onclick={closeSoqlModal}>Close</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- MODAL: TASK CREATOR -->
+        <template if:true={showTaskModal}>
+            <div class="modal-overlay">
+                <div class="modal-dialog">
+                    <div class="modal-header">
+                        <h2>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 11l3 3L22 4"/>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            </svg>
+                            Create Salesforce Task from Gemini Action
+                        </h2>
+                        <button class="close-modal-btn" onclick={closeTaskModal}>&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">Subject</label>
+                            <input type="text" class="form-control" value={taskSubject} oninput={handleTaskSubjectChange}/>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Due Date</label>
+                            <input type="date" class="form-control" value={taskDueDate} oninput={handleTaskDueDateChange}/>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Priority</label>
+                            <select class="form-control" value={taskPriority} onchange={handleTaskPriorityChange}>
+                                <option value="High">High</option>
+                                <option value="Normal">Normal</option>
+                                <option value="Low">Low</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Description / Next Steps</label>
+                            <textarea class="form-control" rows="4" value={taskDescription} oninput={handleTaskDescriptionChange}></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn-secondary" onclick={closeTaskModal}>Cancel</button>
+                        <button class="btn-primary" onclick={handleSaveTask} disabled={isSavingTask}>
+                            <template if:true={isSavingTask}>Saving Task...</template>
+                            <template if:false={isSavingTask}>Create Task</template>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- MODAL: RECORD SEARCH & GROUNDING SELECTOR -->
+        <template if:true={showRecordSearchModal}>
+            <div class="modal-overlay">
+                <div class="modal-dialog grounding-modal-dialog">
+                    <div class="modal-header">
+                        <div class="modal-title-box">
+                            <h2>🔍 Ground with Org Data & Tooling</h2>
+                            <p class="modal-subtitle">Select any CRM Record, Custom Object, Apex Class, LWC Component, Flow, or Schema Definition</p>
+                        </div>
+                        <button class="close-modal-btn" onclick={closeRecordSearchModal}>&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- Category Filter Chips -->
+                        <div class="category-tabs-bar">
+                            <button class={tabAllClass} onclick={handleCategoryChange} data-cat="ALL">All Org Data</button>
+                            <button class={tabCrmClass} onclick={handleCategoryChange} data-cat="CRM">🏢 CRM & Custom</button>
+                            <button class={tabCodeClass} onclick={handleCategoryChange} data-cat="CODE">💻 Apex & Triggers</button>
+                            <button class={tabLwcClass} onclick={handleCategoryChange} data-cat="LWC">⚡ LWC & Aura</button>
+                            <button class={tabMetaClass} onclick={handleCategoryChange} data-cat="METADATA">🗄️ Flows & Schema</button>
+                        </div>
+
+                        <div class="form-group search-input-wrap">
+                            <input
+                                type="text"
+                                class="form-control search-input-field"
+                                placeholder={searchPlaceholderText}
+                                value={recordSearchTerm}
+                                oninput={handleRecordSearchChange}
+                            />
+                            <template if:true={isSearchingRecords}>
+                                <div class="search-spinner-indicator"></div>
+                            </template>
+                        </div>
+
+                        <div class="search-results-list" style="max-height: 320px; overflow-y: auto;">
+                            <template for:each={searchResults} for:item="rec">
+                                <div
+                                    key={rec.id}
+                                    class="grounding-result-item"
+                                    onclick={handleSelectSearchResult}
+                                    data-id={rec.id}
+                                    data-type={rec.type}
+                                    data-name={rec.name}
+                                >
+                                    <div class="item-icon-box">
+                                        <span>{rec.icon}</span>
+                                    </div>
+                                    <div class="item-details">
+                                        <div class="item-title">
+                                            <span class={rec.badgeClass}>{rec.type}</span>
+                                            <span class="item-name">{rec.name}</span>
+                                        </div>
+                                        <div class="item-desc">{rec.subtitle}</div>
+                                    </div>
+                                    <div class="item-action">
+                                        <span class="ground-btn-tag">Ground</span>
+                                    </div>
+                                </div>
+                            </template>
+                            <template if:false={hasSearchResults}>
+                                <div class="search-empty-state">
+                                    <template if:true={isSearchingRecords}>
+                                        <p>Searching Salesforce org data, Apex source, and Tooling metadata...</p>
+                                    </template>
+                                    <template if:false={isSearchingRecords}>
+                                        <p>Type at least 2 characters to search across CRM records, Custom Objects, Apex code, LWCs, Flows, and Tooling metadata.</p>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn-secondary" onclick={closeRecordSearchModal}>Close</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>
