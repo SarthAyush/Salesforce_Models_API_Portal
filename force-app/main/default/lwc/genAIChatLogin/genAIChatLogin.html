@@ -10,10 +10,10 @@
                     <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
                     </svg>
-                    <span>Intelligence Portal</span>
+                    <span>Workspace HQ</span>
                 </div>
-                <h1 class="auth-title">Welcome Back</h1>
-                <p class="auth-subtitle">Sign in to your intelligent AI workspace and saved conversation history.</p>
+                <h1 class="auth-title">Welcome back, human.</h1>
+                <p class="auth-subtitle">Log in so the AI can do the heavy lifting while you take all the credit.</p>
             </div>
 
             <!-- Role Selector: Standard User vs Admin -->
@@ -27,7 +27,7 @@
                         <svg class="role-icon" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
                         </svg>
-                        <span>Standard User</span>
+                        <span>Everyday Genius</span>
                     </button>
                     <button 
                         type="button" 
@@ -37,11 +37,11 @@
                         <svg class="role-icon" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                         </svg>
-                        <span>Administrator</span>
+                        <span>Supreme Admin</span>
                     </button>
                 </div>
                 <template lwc:if={isAdminRole}>
-                    <p class="role-hint-text">Admin mode enables model consumption monitoring, active user analytics, and system oversight.</p>
+                    <p class="role-hint-text">Admin mode active: Keep an eye on system usage and pretend you understand all the charts.</p>
                 </template>
             </div>
 
@@ -68,7 +68,7 @@
             <!-- Login Form -->
             <form onsubmit={handleLoginSubmit} class="auth-form">
                 <div class="form-group">
-                    <label class="form-label" for="login-email">Email Address</label>
+                    <label class="form-label" for="login-email">Work Email</label>
                     <div class="input-wrapper">
                         <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
@@ -78,7 +78,7 @@
                             id="login-email"
                             type="email"
                             class="form-input"
-                            placeholder="you@company.com"
+                            placeholder="you@company.com (the one full of unread emails)"
                             value={email}
                             oninput={handleEmailChange}
                             required
@@ -89,8 +89,8 @@
 
                 <div class="form-group">
                     <div class="label-row">
-                        <label class="form-label" for="login-password">Password</label>
-                        <button type="button" class="link-btn" onclick={openForgotPasswordModal}>Forgot password?</button>
+                        <label class="form-label" for="login-password">Secret Password</label>
+                        <button type="button" class="link-btn" onclick={openForgotPasswordModal}>Forgot password? (We will not judge)</button>
                     </div>
                     <div class="input-wrapper">
                         <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor">
@@ -100,7 +100,7 @@
                             id="login-password"
                             type={passwordInputType}
                             class="form-input"
-                            placeholder="Enter your password"
+                            placeholder="Your unhackable password"
                             value={password}
                             oninput={handlePasswordChange}
                             required
@@ -126,10 +126,10 @@
                 <button type="submit" class="submit-btn" disabled={isLoading}>
                     <template lwc:if={isLoading}>
                         <span class="spinner"></span>
-                        <span>Verifying Access...</span>
+                        <span>Checking if you are human...</span>
                     </template>
                     <template lwc:else>
-                        <span>Sign In as {selectedRoleLabel}</span>
+                        <span>Let Me In</span>
                         <svg class="arrow-icon" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
@@ -139,7 +139,7 @@
 
             <!-- Social Authentication Divider -->
             <div class="auth-divider-line">
-                <span>OR</span>
+                <span>OR TAKE THE FAST TRACK</span>
             </div>
 
             <!-- Google Authentication Button -->
@@ -164,23 +164,23 @@
                         <svg class="info-alert-icon" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
                         </svg>
-                        <span>No account found for <strong>{googlePendingEmail}</strong></span>
+                        <span>Plot twist: No account found for {googlePendingEmail}</span>
                     </div>
-                    <p class="not-found-desc">Your Google account was verified successfully, but you don't have an active workspace profile yet.</p>
+                    <p class="not-found-desc">Google verified you nicely, but you do not have an active workspace profile yet. Want us to create one right now?</p>
                     <div class="not-found-actions">
                         <button type="button" class="btn-auto-create" onclick={handleConfirmGoogleRegister} disabled={isLoading}>
-                            <template lwc:if={isLoading}>Creating...</template>
-                            <template lwc:else>Create Profile &amp; Sign In</template>
+                            <template lwc:if={isLoading}>Creating profile...</template>
+                            <template lwc:else>Make Profile &amp; Sign In</template>
                         </button>
-                        <button type="button" class="btn-cancel-google" onclick={handleDismissGooglePrompt}>Cancel</button>
+                        <button type="button" class="btn-cancel-google" onclick={handleDismissGooglePrompt}>Never Mind</button>
                     </div>
                 </div>
             </template>
 
             <!-- Footer Switcher -->
             <div class="auth-footer">
-                <span>Don't have an account yet?</span>
-                <button type="button" class="switch-link-btn" onclick={handleSwitchToSignup}>Create Account</button>
+                <span>First time around here?</span>
+                <button type="button" class="switch-link-btn" onclick={handleSwitchToSignup}>Claim Your Account</button>
             </div>
         </div>
 
@@ -190,7 +190,7 @@
                 <div class="modal-card" onclick={stopModalPropagation}>
                     <div class="modal-header">
                         <div class="modal-title-group">
-                            <h2 class="modal-title">Reset Password</h2>
+                            <h2 class="modal-title">Password Rescue Mission</h2>
                             <span class="step-badge">{resetStepBadgeText}</span>
                         </div>
                         <button type="button" class="close-btn" onclick={closeForgotPasswordModal} aria-label="Close dialog">×</button>
@@ -209,10 +209,10 @@
 
                     <!-- STEP 1: Request OTP Code via Email -->
                     <template lwc:if={isResetStep1}>
-                        <p class="modal-desc">Enter your account email. If a matching record exists, we will immediately send a 6-digit verification code to your inbox.</p>
+                        <p class="modal-desc">Drop your email below and we will shoot over a 6-digit rescue code before your tea cools down.</p>
                         <form onsubmit={handleSendResetCodeSubmit} class="modal-form">
                             <div class="form-group">
-                                <label class="form-label" for="reset-email">Email Address</label>
+                                <label class="form-label" for="reset-email">Your Account Email</label>
                                 <input
                                     id="reset-email"
                                     type="email"
@@ -228,10 +228,10 @@
                                 <button type="submit" class="submit-btn modal-submit" disabled={isSendingCode}>
                                     <template lwc:if={isSendingCode}>
                                         <span class="spinner"></span>
-                                        <span>Sending Code...</span>
+                                        <span>Dispatching Code...</span>
                                     </template>
                                     <template lwc:else>
-                                        <span>Send Verification Code</span>
+                                        <span>Send Rescue Code</span>
                                     </template>
                                 </button>
                             </div>
@@ -241,20 +241,20 @@
                     <!-- STEP 2: Verify OTP Code and Set New Password -->
                     <template lwc:if={isResetStep2}>
                         <div class="reset-email-chip">
-                            <span>Code sent to: <strong>{resetEmail}</strong></span>
+                            <span>Rescue code dispatched to: <strong>{resetEmail}</strong></span>
                             <button type="button" class="chip-change-btn" onclick={handleBackToStep1}>Change</button>
                         </div>
 
                         <template lwc:if={serverResetCode}>
                             <div class="reset-code-helper-chip">
-                                <span class="helper-code-label">Verification Code: <strong>{serverResetCode}</strong></span>
-                                <button type="button" class="autofill-btn" onclick={handleAutoFillResetCode}>Auto-fill</button>
+                                <span class="helper-code-label">Demo rescue code: <strong>{serverResetCode}</strong></span>
+                                <button type="button" class="autofill-btn" onclick={handleAutoFillResetCode}>Autofill Code</button>
                             </div>
                         </template>
 
                         <form onsubmit={handleVerifyCodeAndResetSubmit} class="modal-form">
                             <div class="form-group">
-                                <label class="form-label" for="reset-code">6-Digit Verification Code</label>
+                                <label class="form-label" for="reset-code">6-Digit Rescue Code</label>
                                 <input
                                     id="reset-code"
                                     type="text"
@@ -269,7 +269,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label" for="reset-new-password">New Password</label>
+                                <label class="form-label" for="reset-new-password">Brand New Password</label>
                                 <input
                                     id="reset-new-password"
                                     type="password"
@@ -282,12 +282,12 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label" for="reset-confirm-password">Confirm New Password</label>
+                                <label class="form-label" for="reset-confirm-password">Confirm Brand New Password</label>
                                 <input
                                     id="reset-confirm-password"
                                     type="password"
                                     class="form-input"
-                                    placeholder="Re-type your new password"
+                                    placeholder="Type it again with confidence"
                                     value={confirmNewPassword}
                                     oninput={handleConfirmNewPasswordChange}
                                     required
@@ -296,7 +296,7 @@
 
                             <div class="modal-resend-row">
                                 <button type="button" class="link-btn" onclick={handleResendCode} disabled={isSendingCode}>
-                                    Didn't get the code? Resend
+                                    Inbox still empty? Send another code
                                 </button>
                             </div>
 
@@ -305,10 +305,10 @@
                                 <button type="submit" class="submit-btn modal-submit" disabled={isResetting}>
                                     <template lwc:if={isResetting}>
                                         <span class="spinner"></span>
-                                        <span>Updating Password...</span>
+                                        <span>Locking in new password...</span>
                                     </template>
                                     <template lwc:else>
-                                        <span>Verify & Update Password</span>
+                                        <span>Save &amp; Let Me In</span>
                                     </template>
                                 </button>
                             </div>

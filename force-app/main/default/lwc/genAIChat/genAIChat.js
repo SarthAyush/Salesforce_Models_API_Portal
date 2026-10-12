@@ -69,6 +69,23 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
     @track currentUser = null;
     sessionToken = null;
     @track communitySubTab = 'community'; // 'community' or 'directMessages'
+    @track isChatRefreshing = false;
+
+    get hasExistingSession() {
+        try {
+            return window.sessionStorage ? !!window.sessionStorage.getItem(SESSION_STORAGE_KEY) : false;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    get showChatSkeleton() {
+        return (this.isAuthenticated && this.isChatRefreshing) || (this.isAuthLoading && this.hasExistingSession);
+    }
+
+    get showAuthSkeleton() {
+        return this.isAuthLoading && !this.hasExistingSession;
+    }
 
     // Profile Menu & Modal states
     @track isProfileDropdownOpen = false;
@@ -288,6 +305,28 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
             }
         } catch (e) {
             // ignore
+        }
+    }
+
+    async handleRefreshTab() {
+        this.isChatRefreshing = true;
+        try {
+            await Promise.all([
+                this.checkCurrentSession(),
+                this.fetchSavedSessions(),
+                this.fetchApiConsumption(),
+                this.loadConnectedOrgStatus()
+            ]);
+            if (this.currentSessionId) {
+                await this.loadSessionMessages(this.currentSessionId);
+            }
+        } catch (e) {
+            console.warn('Tab refresh error:', e);
+        } finally {
+            // Provide a pleasant, visible skeleton shimmer transition
+            setTimeout(() => {
+                this.isChatRefreshing = false;
+            }, 750);
         }
     }
 
@@ -2089,9 +2128,9 @@ export default class GenAIChat extends NavigationMixin(LightningElement) {
         exportText += `---\n\n`;
 
         this.messages.forEach((m) => {
-            const sender = m.isUser ? '### 👤 User' : `### 🤖 ${m.modelLabel || 'AI Assistant'}`;
+            const sender = m.isUser ? '### User' : `### ${m.modelLabel || 'AI Assistant'}`;
             const time = m.timeStr ? ` *(${m.timeStr})*` : '';
-            const latency = m.latencyStr ? ` \`⚡ ${m.latencyStr}\`` : '';
+            const latency = m.latencyStr ? ` (${m.latencyStr})` : '';
             exportText += `${sender}${time}${latency}\n\n`;
             exportText += `${m.rawContent || m.content}\n\n`;
             if (m.hasTableData) {

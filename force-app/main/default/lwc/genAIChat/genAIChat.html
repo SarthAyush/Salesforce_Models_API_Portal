@@ -1,25 +1,237 @@
 <template>
     <div class={rootClass}>
-        <!-- SESSION VERIFICATION SKELETON LOADER -->
-        <template if:true={isAuthLoading}>
+        <!-- SKELETON 1: UNLOGGED USER SKELETON (LOGIN OR SIGNUP STRUCTURE) -->
+        <template if:true={showAuthSkeleton}>
             <div class="auth-skeleton-state">
-                <div class="auth-skeleton-card">
-                    <div class="auth-skeleton-orb sk-shimmer"></div>
-                    <div class="auth-skeleton-title sk-shimmer"></div>
-                    <div class="auth-skeleton-subtitle sk-shimmer"></div>
-                    <div class="auth-skeleton-input sk-shimmer"></div>
-                    <div class="auth-skeleton-input sk-shimmer"></div>
-                    <div class="auth-skeleton-btn sk-shimmer"></div>
-                    <div class="auth-skeleton-status">
-                        <span class="sk-pulse-dot"></span>
-                        <span>Verifying session security...</span>
+                <template if:true={isLoginView}>
+                    <!-- Login Page Skeleton Structure -->
+                    <div class="auth-skeleton-card sk-login-card">
+                        <div class="sk-brand-badge sk-shimmer"></div>
+                        <div class="sk-title-bar sk-shimmer"></div>
+                        <div class="sk-subtitle-bar sk-shimmer"></div>
+                        <div class="sk-subtitle-sub sk-shimmer"></div>
+
+                        <!-- Role Selector Skeleton -->
+                        <div class="sk-role-track">
+                            <div class="sk-role-pill sk-shimmer"></div>
+                            <div class="sk-role-pill sk-shimmer"></div>
+                        </div>
+
+                        <!-- Form Input Skeletons -->
+                        <div class="sk-form-group">
+                            <div class="sk-label sk-shimmer"></div>
+                            <div class="sk-input sk-shimmer"></div>
+                        </div>
+                        <div class="sk-form-group">
+                            <div class="sk-label-row">
+                                <div class="sk-label sk-shimmer"></div>
+                                <div class="sk-link sk-shimmer"></div>
+                            </div>
+                            <div class="sk-input sk-shimmer"></div>
+                        </div>
+
+                        <!-- Button Skeleton -->
+                        <div class="sk-btn sk-primary-btn sk-shimmer"></div>
+
+                        <!-- Divider Skeleton -->
+                        <div class="sk-divider sk-shimmer"></div>
+
+                        <!-- Google Button Skeleton -->
+                        <div class="sk-btn sk-google-btn sk-shimmer"></div>
+
+                        <!-- Footer Link Skeleton -->
+                        <div class="sk-footer-link sk-shimmer"></div>
+
+                        <div class="auth-skeleton-status">
+                            <span class="sk-pulse-dot"></span>
+                            <span>Double-checking if you are human or three raccoons in a trench coat...</span>
+                        </div>
+                    </div>
+                </template>
+                <template if:false={isLoginView}>
+                    <!-- Sign Up Page Skeleton Structure -->
+                    <div class="auth-skeleton-card sk-signup-card">
+                        <div class="sk-brand-badge sk-shimmer"></div>
+                        <div class="sk-title-bar sk-shimmer"></div>
+                        <div class="sk-subtitle-bar sk-shimmer"></div>
+
+                        <!-- Name & Email Skeletons -->
+                        <div class="sk-form-group">
+                            <div class="sk-label sk-shimmer"></div>
+                            <div class="sk-input sk-shimmer"></div>
+                        </div>
+                        <div class="sk-form-group">
+                            <div class="sk-label sk-shimmer"></div>
+                            <div class="sk-input sk-shimmer"></div>
+                        </div>
+
+                        <!-- Password Row Skeletons -->
+                        <div class="sk-row">
+                            <div class="sk-col">
+                                <div class="sk-label sk-shimmer"></div>
+                                <div class="sk-input sk-shimmer"></div>
+                            </div>
+                            <div class="sk-col">
+                                <div class="sk-label sk-shimmer"></div>
+                                <div class="sk-input sk-shimmer"></div>
+                            </div>
+                        </div>
+
+                        <!-- Avatar Grid Skeleton -->
+                        <div class="sk-label sk-shimmer"></div>
+                        <div class="sk-avatar-grid">
+                            <div class="sk-avatar-circle sk-shimmer"></div>
+                            <div class="sk-avatar-circle sk-shimmer"></div>
+                            <div class="sk-avatar-circle sk-shimmer"></div>
+                            <div class="sk-avatar-circle sk-shimmer"></div>
+                            <div class="sk-avatar-circle sk-shimmer"></div>
+                            <div class="sk-avatar-circle sk-shimmer"></div>
+                        </div>
+
+                        <!-- Bio Skeleton -->
+                        <div class="sk-form-group">
+                            <div class="sk-label sk-shimmer"></div>
+                            <div class="sk-input sk-shimmer"></div>
+                        </div>
+
+                        <!-- Buttons Skeleton -->
+                        <div class="sk-btn sk-primary-btn sk-shimmer"></div>
+                        <div class="sk-divider sk-shimmer"></div>
+                        <div class="sk-btn sk-google-btn sk-shimmer"></div>
+                        <div class="sk-footer-link sk-shimmer"></div>
+
+                        <div class="auth-skeleton-status">
+                            <span class="sk-pulse-dot"></span>
+                            <span>Assembling your registration paperwork... (almost done)</span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- SKELETON 2: LOGGED-IN CHAT APPLICATION SKELETON (WHOLE CHAT UI SKELETON) -->
+        <template if:true={showChatSkeleton}>
+            <div class="chat-skeleton-app">
+                <!-- Top Toolbar Skeleton -->
+                <div class="sk-chat-toolbar">
+                    <div class="sk-toolbar-left">
+                        <div class="sk-pill sk-shimmer" style="width: 82px;"></div>
+                        <div class="sk-pill sk-shimmer" style="width: 95px;"></div>
+                        <div class="sk-pill sk-shimmer" style="width: 120px;"></div>
+                        <div class="sk-pill sk-shimmer" style="width: 100px;"></div>
+                        <div class="sk-pill sk-shimmer" style="width: 102px;"></div>
+                        <div class="sk-chat-title-skeleton sk-shimmer"></div>
+                    </div>
+                    <div class="sk-toolbar-right">
+                        <div class="sk-circle-btn sk-shimmer"></div>
+                        <div class="sk-user-badge-skeleton sk-shimmer"></div>
+                    </div>
+                </div>
+
+                <!-- Main Body Skeleton (Sidebar + Central Chat Arena) -->
+                <div class="sk-chat-body">
+                    <!-- Left Sidebar / Sessions Skeleton -->
+                    <div class="sk-sidebar">
+                        <div class="sk-sidebar-header sk-shimmer"></div>
+                        <div class="sk-sidebar-search sk-shimmer"></div>
+                        <div class="sk-session-list">
+                            <div class="sk-session-item">
+                                <div class="sk-session-dot sk-shimmer"></div>
+                                <div class="sk-session-text">
+                                    <div class="sk-line sk-line-80 sk-shimmer"></div>
+                                    <div class="sk-line sk-line-40 sk-shimmer"></div>
+                                </div>
+                            </div>
+                            <div class="sk-session-item">
+                                <div class="sk-session-dot sk-shimmer"></div>
+                                <div class="sk-session-text">
+                                    <div class="sk-line sk-line-90 sk-shimmer"></div>
+                                    <div class="sk-line sk-line-50 sk-shimmer"></div>
+                                </div>
+                            </div>
+                            <div class="sk-session-item">
+                                <div class="sk-session-dot sk-shimmer"></div>
+                                <div class="sk-session-text">
+                                    <div class="sk-line sk-line-70 sk-shimmer"></div>
+                                    <div class="sk-line sk-line-30 sk-shimmer"></div>
+                                </div>
+                            </div>
+                            <div class="sk-session-item">
+                                <div class="sk-session-dot sk-shimmer"></div>
+                                <div class="sk-session-text">
+                                    <div class="sk-line sk-line-85 sk-shimmer"></div>
+                                    <div class="sk-line sk-line-45 sk-shimmer"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sk-sidebar-footer sk-shimmer"></div>
+                    </div>
+
+                    <!-- Center Chat Stream Arena Skeleton -->
+                    <div class="sk-chat-arena">
+                        <!-- Model Selector Banner Skeleton -->
+                        <div class="sk-model-banner">
+                            <div class="sk-model-tag sk-shimmer"></div>
+                            <div class="sk-status-pill sk-shimmer"></div>
+                        </div>
+
+                        <!-- Messages Stream Skeleton -->
+                        <div class="sk-messages-stream">
+                            <!-- AI Message Bubble (Left) -->
+                            <div class="sk-msg-row sk-ai-row">
+                                <div class="sk-msg-avatar sk-shimmer"></div>
+                                <div class="sk-msg-bubble sk-ai-bubble">
+                                    <div class="sk-line sk-line-95 sk-shimmer"></div>
+                                    <div class="sk-line sk-line-85 sk-shimmer"></div>
+                                    <div class="sk-line sk-line-60 sk-shimmer"></div>
+                                </div>
+                            </div>
+
+                            <!-- User Message Bubble (Right) -->
+                            <div class="sk-msg-row sk-user-row">
+                                <div class="sk-msg-bubble sk-user-bubble">
+                                    <div class="sk-line sk-line-90 sk-shimmer"></div>
+                                    <div class="sk-line sk-line-50 sk-shimmer"></div>
+                                </div>
+                            </div>
+
+                            <!-- AI Response Bubble with Code Block (Left) -->
+                            <div class="sk-msg-row sk-ai-row">
+                                <div class="sk-msg-avatar sk-shimmer"></div>
+                                <div class="sk-msg-bubble sk-ai-bubble">
+                                    <div class="sk-line sk-line-90 sk-shimmer"></div>
+                                    <div class="sk-code-block sk-shimmer"></div>
+                                    <div class="sk-line sk-line-75 sk-shimmer"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chat Composer Skeleton -->
+                        <div class="sk-chat-composer">
+                            <div class="sk-composer-box sk-shimmer"></div>
+                            <div class="sk-composer-toolbar">
+                                <div class="sk-composer-tools">
+                                    <div class="sk-tool-circle sk-shimmer"></div>
+                                    <div class="sk-tool-circle sk-shimmer"></div>
+                                    <div class="sk-tool-pill sk-shimmer"></div>
+                                </div>
+                                <div class="sk-send-btn sk-shimmer"></div>
+                            </div>
+                        </div>
+
+                        <!-- Chat Status Bar with Humorous Message -->
+                        <div class="sk-chat-status-bar">
+                            <span class="sk-pulse-dot"></span>
+                            <span>Untangling neural wires and brewing digital coffee... (Please do not feed the algorithms)</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </template>
 
         <!-- UNAUTHENTICATED GUEST / SIGN-IN VIEW -->
-        <template if:false={isAuthLoading}>
+        <template if:false={showAuthSkeleton}>
+            <template if:false={showChatSkeleton}>
             <template if:false={isAuthenticated}>
                 <div class="auth-screen-wrapper">
                     <!-- Floating Theme Palette Switcher on Auth Screen -->
@@ -117,6 +329,15 @@
                         onclick={handleSwitchToDirectMessages}>
                         <lightning-icon icon-name="utility:lock" size="x-small" class="pill-icon lock-icon"></lightning-icon>
                         <span class="btn-text">Private PMs</span>
+                    </button>
+
+                    <!-- Refresh Tab Button -->
+                    <button 
+                        class="action-pill-btn refresh-tab-btn" 
+                        title="Refresh active tab & sync workspace" 
+                        onclick={handleRefreshTab}>
+                        <lightning-icon icon-name="utility:refresh" size="x-small" class="pill-icon"></lightning-icon>
+                        <span class="btn-text">Refresh Tab</span>
                     </button>
 
                     <!-- EDITABLE CURRENT CHAT TITLE -->
@@ -1649,5 +1870,6 @@
                 </div>
             </template>
         </template>
-    </div>
+    </template>
+</div>
 </template>
