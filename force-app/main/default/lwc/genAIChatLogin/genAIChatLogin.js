@@ -3,6 +3,8 @@ import loginUser from '@salesforce/apex/GenAIChatController.loginUser';
 import loginWithGoogle from '@salesforce/apex/GenAIChatController.loginWithGoogle';
 import sendPasswordResetCode from '@salesforce/apex/GenAIChatController.sendPasswordResetCode';
 import verifyResetCodeAndSetPassword from '@salesforce/apex/GenAIChatController.verifyResetCodeAndSetPassword';
+import getGoogleAuthConfig from '@salesforce/apex/GenAIChatController.getGoogleAuthConfig';
+import saveGoogleAuthClientId from '@salesforce/apex/GenAIChatController.saveGoogleAuthClientId';
 
 export default class GenAIChatLogin extends LightningElement {
     @api theme = 'slate-indigo';
@@ -33,6 +35,32 @@ export default class GenAIChatLogin extends LightningElement {
     @track isSendingCode = false;
     @track isResetting = false;
     @track serverResetCode = '';
+
+    connectedCallback() {
+        this.boundGoogleMessageHandler = this.handleGoogleOAuthMessage.bind(this);
+        window.addEventListener('message', this.boundGoogleMessageHandler);
+        this.loadGoogleAuthConfig();
+    }
+
+    disconnectedCallback() {
+        if (this.boundGoogleMessageHandler) {
+            window.removeEventListener('message', this.boundGoogleMessageHandler);
+        }
+    }
+
+    async loadGoogleAuthConfig() {
+        try {
+            const cfg = await getGoogleAuthConfig();
+            if (cfg && cfg.clientId) {
+                this.googleClientId = cfg.clientId;
+                if (window.localStorage) {
+                    window.localStorage.setItem('GENAI_GOOGLE_CLIENT_ID', cfg.clientId);
+                }
+            }
+        } catch (err) {
+            console.warn('Error loading Google auth config:', err);
+        }
+    }
 
     get computedContainerClass() {
         const isDark = this.theme === 'midnight-dark';
@@ -154,8 +182,9 @@ export default class GenAIChatLogin extends LightningElement {
         }));
     }
 
+    @track googleClientId = '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
     @track showGoogleConfigModal = false;
-    @track googleClientIdInput = '';
+    @track googleClientIdInput = '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
 
     get googleCallbackUrl() {
         const isSitesUrl = window.location.origin.includes('salesforce-sites.com');
@@ -165,7 +194,7 @@ export default class GenAIChatLogin extends LightningElement {
     }
 
     openGoogleConfigModal() {
-        this.googleClientIdInput = window.localStorage ? window.localStorage.getItem('GENAI_GOOGLE_CLIENT_ID') || '' : '';
+        this.googleClientIdInput = this.googleClientId || (window.localStorage ? window.localStorage.getItem('GENAI_GOOGLE_CLIENT_ID') : '') || '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
         this.showGoogleConfigModal = true;
     }
 
@@ -179,15 +208,12 @@ export default class GenAIChatLogin extends LightningElement {
 
     handleSaveGoogleClientId() {
         const id = (this.googleClientIdInput || '').trim();
+        this.googleClientId = id || '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
         if (window.localStorage) {
-            if (id) {
-                window.localStorage.setItem('GENAI_GOOGLE_CLIENT_ID', id);
-            } else {
-                window.localStorage.removeItem('GENAI_GOOGLE_CLIENT_ID');
-            }
+            window.localStorage.setItem('GENAI_GOOGLE_CLIENT_ID', this.googleClientId);
         }
         this.showGoogleConfigModal = false;
-        this.successMessage = id ? 'Google Client ID saved! You can now sign in with Google.' : 'Google Client ID cleared.';
+        this.successMessage = 'Google Client ID saved!';
     }
 
     handleCopySnippet(event) {
@@ -208,18 +234,18 @@ export default class GenAIChatLogin extends LightningElement {
 
         const callbackUrl = this.googleCallbackUrl;
 
-        // Retrieve configured Client ID from localStorage
-        let googleClientId = '';
-        try {
-            googleClientId = window.localStorage ? window.localStorage.getItem('GENAI_GOOGLE_CLIENT_ID') : '';
-        } catch (e) {
-            googleClientId = '';
+        // Retrieve configured Client ID from Custom Settings or memory or localStorage
+        let googleClientId = this.googleClientId;
+        if (!googleClientId) {
+            try {
+                googleClientId = window.localStorage ? window.localStorage.getItem('GENAI_GOOGLE_CLIENT_ID') : '';
+            } catch (e) {
+                googleClientId = '';
+            }
         }
-
-        // If no Client ID has been configured yet, guide the user to set it up
         if (!googleClientId || !googleClientId.trim()) {
-            this.openGoogleConfigModal();
-            return;
+            googleClientId = '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
+            this.googleClientId = googleClientId;
         }
 
         const authorizeUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +

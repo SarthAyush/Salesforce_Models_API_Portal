@@ -944,7 +944,7 @@ public without sharing class GenAIChatController {
     }
 
     /**
-     * Retrieve configured Google OAuth Client ID or fallback to standard system setting
+     * Retrieve configured Google OAuth Client ID from Custom Settings (Gemini_Settings__c.Google_Client_ID__c)
      */
     @AuraEnabled(cacheable=false)
     public static Map<String, Object> getGoogleAuthConfig() {
@@ -952,11 +952,14 @@ public without sharing class GenAIChatController {
         String clientId = '';
         try {
             Gemini_Settings__c gs = Gemini_Settings__c.getOrgDefaults();
-            if (gs != null && String.isNotBlank(gs.Endpoint_URL__c) && gs.Endpoint_URL__c.contains('googleusercontent.com')) {
-                clientId = gs.Endpoint_URL__c.trim();
+            if (gs != null && String.isNotBlank(gs.Google_Client_ID__c)) {
+                clientId = gs.Google_Client_ID__c.trim();
             }
         } catch (Exception e) {
             // Ignore fallback
+        }
+        if (String.isBlank(clientId)) {
+            clientId = '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
         }
         cfg.put('clientId', clientId);
         cfg.put('isConfigured', String.isNotBlank(clientId));
@@ -973,7 +976,7 @@ public without sharing class GenAIChatController {
         if (gs == null) {
             gs = new Gemini_Settings__c();
         }
-        gs.Endpoint_URL__c = String.isNotBlank(clientId) ? clientId.trim() : '';
+        gs.Google_Client_ID__c = String.isNotBlank(clientId) ? clientId.trim() : '';
         upsert gs;
         return true;
     }

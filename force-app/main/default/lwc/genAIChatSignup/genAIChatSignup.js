@@ -1,6 +1,7 @@
 import { LightningElement, track, api } from 'lwc';
 import registerUser from '@salesforce/apex/GenAIChatController.registerUser';
 import loginWithGoogle from '@salesforce/apex/GenAIChatController.loginWithGoogle';
+import getGoogleAuthConfig from '@salesforce/apex/GenAIChatController.getGoogleAuthConfig';
 
 const AVATAR_LIST = [
     { name: 'standard:user', label: 'Default User' },
@@ -23,16 +24,32 @@ export default class GenAIChatSignup extends LightningElement {
     @track showPassword = false;
     @track errorMessage = '';
     @track isLoading = false;
+    @track googleClientId = '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
     boundGoogleMessageHandler = null;
 
     connectedCallback() {
         this.boundGoogleMessageHandler = this.handleGoogleOAuthMessage.bind(this);
         window.addEventListener('message', this.boundGoogleMessageHandler);
+        this.loadGoogleAuthConfig();
     }
 
     disconnectedCallback() {
         if (this.boundGoogleMessageHandler) {
             window.removeEventListener('message', this.boundGoogleMessageHandler);
+        }
+    }
+
+    async loadGoogleAuthConfig() {
+        try {
+            const cfg = await getGoogleAuthConfig();
+            if (cfg && cfg.clientId) {
+                this.googleClientId = cfg.clientId;
+                if (window.localStorage) {
+                    window.localStorage.setItem('GENAI_GOOGLE_CLIENT_ID', cfg.clientId);
+                }
+            }
+        } catch (err) {
+            console.warn('Error fetching Google auth config in signup:', err);
         }
     }
 
@@ -147,16 +164,18 @@ export default class GenAIChatSignup extends LightningElement {
             ? window.location.origin + '/mumodelsarthak/apex/genAIOAuthCallback'
             : window.location.origin + '/apex/genAIOAuthCallback';
 
-        let googleClientId = '';
-        try {
-            googleClientId = window.localStorage ? window.localStorage.getItem('GENAI_GOOGLE_CLIENT_ID') : '';
-        } catch (e) {
-            googleClientId = '';
+        let googleClientId = this.googleClientId;
+        if (!googleClientId) {
+            try {
+                googleClientId = window.localStorage ? window.localStorage.getItem('GENAI_GOOGLE_CLIENT_ID') : '';
+            } catch (e) {
+                googleClientId = '';
+            }
         }
 
         if (!googleClientId || !googleClientId.trim()) {
-            this.errorMessage = 'Google OAuth is not configured yet. Please switch to Sign In and click "Google OAuth Setup / Client ID" to enter your Google Cloud Web Client ID.';
-            return;
+            googleClientId = '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
+            this.googleClientId = googleClientId;
         }
 
         const authorizeUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +

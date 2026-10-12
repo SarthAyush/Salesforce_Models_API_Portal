@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Google_Client_ID__c</fullName>
+    <description>OAuth 2.0 Client ID for Google Authentication</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Enter the OAuth 2.0 Web Application Client ID from Google Cloud Console</inlineHelpText>
+    <label>Google Client ID</label>
+    <length>255</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>
