@@ -177,80 +177,12 @@
                 </div>
             </template>
 
-            <!-- Google Client ID Setup Helper Link -->
-            <div class="google-config-link-row">
-                <button type="button" class="google-config-link-btn" onclick={openGoogleConfigModal} title="Configure Google Cloud OAuth Client ID">
-                    <svg class="gear-icon" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-                    </svg>
-                    <span>Google OAuth Setup / Client ID</span>
-                </button>
-            </div>
-
             <!-- Footer Switcher -->
             <div class="auth-footer">
                 <span>Don't have an account yet?</span>
                 <button type="button" class="switch-link-btn" onclick={handleSwitchToSignup}>Create Account</button>
             </div>
         </div>
-
-        <!-- Google OAuth Configuration & Instructions Modal -->
-        <template lwc:if={showGoogleConfigModal}>
-            <div class="modal-backdrop" onclick={closeGoogleConfigModal}>
-                <div class="modal-card google-setup-modal-card" onclick={stopModalPropagation}>
-                    <div class="modal-header">
-                        <div class="modal-title-group">
-                            <h2 class="modal-title">Configure Google OAuth Client ID</h2>
-                            <span class="step-badge">Google Cloud</span>
-                        </div>
-                        <button type="button" class="close-btn" onclick={closeGoogleConfigModal} aria-label="Close dialog">×</button>
-                    </div>
-
-                    <p class="modal-desc">
-                        Google returns <code>Error 401: invalid_client</code> when a valid OAuth 2.0 Web Client ID from your Google Cloud Console has not been provided.
-                    </p>
-
-                    <div class="google-setup-steps">
-                        <div class="setup-step-item">
-                            <span class="step-pill">1</span>
-                            <div>
-                                <strong>Create Web Client ID:</strong> Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console &rarr; Credentials</a> and create an <em>OAuth client ID</em> of type <em>Web application</em>.
-                            </div>
-                        </div>
-                        <div class="setup-step-item">
-                            <span class="step-pill">2</span>
-                            <div>
-                                <strong>Authorized Redirect URI:</strong> Copy and add this exact URL under <em>Authorized redirect URIs</em>:
-                                <div class="copy-url-snippet">
-                                    <code>{googleCallbackUrl}</code>
-                                    <button type="button" class="snippet-copy-btn" data-copy={googleCallbackUrl} onclick={handleCopySnippet}>Copy</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 1rem;">
-                        <label class="form-label" for="google-client-id-input">Your Google OAuth Client ID</label>
-                        <input
-                            id="google-client-id-input"
-                            type="text"
-                            class="form-input"
-                            placeholder="e.g. 123456789-abcdef.apps.googleusercontent.com"
-                            value={googleClientIdInput}
-                            oninput={handleGoogleClientIdInputChange}
-                        />
-                        <span class="field-subtext">Saved in your browser and automatically used for Google Login.</span>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button type="button" class="cancel-btn" onclick={closeGoogleConfigModal}>Cancel</button>
-                        <button type="button" class="submit-btn modal-submit" onclick={handleSaveGoogleClientId}>
-                            <span>Save Client ID</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </template>
 
         <!-- 2-Step Forgot / Reset Password Modal with Email OTP Verification -->
         <template lwc:if={showResetModal}>

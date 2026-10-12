@@ -183,45 +183,12 @@ export default class GenAIChatLogin extends LightningElement {
     }
 
     @track googleClientId = '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
-    @track showGoogleConfigModal = false;
-    @track googleClientIdInput = '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
 
     get googleCallbackUrl() {
         const isSitesUrl = window.location.origin.includes('salesforce-sites.com');
         return isSitesUrl
             ? window.location.origin + '/mumodelsarthak/apex/genAIOAuthCallback'
             : window.location.origin + '/apex/genAIOAuthCallback';
-    }
-
-    openGoogleConfigModal() {
-        this.googleClientIdInput = this.googleClientId || (window.localStorage ? window.localStorage.getItem('GENAI_GOOGLE_CLIENT_ID') : '') || '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
-        this.showGoogleConfigModal = true;
-    }
-
-    closeGoogleConfigModal() {
-        this.showGoogleConfigModal = false;
-    }
-
-    handleGoogleClientIdInputChange(event) {
-        this.googleClientIdInput = event.target.value;
-    }
-
-    handleSaveGoogleClientId() {
-        const id = (this.googleClientIdInput || '').trim();
-        this.googleClientId = id || '211930830295-ltc2upv4alnfjbdhipbs88obthk0b0ij.apps.googleusercontent.com';
-        if (window.localStorage) {
-            window.localStorage.setItem('GENAI_GOOGLE_CLIENT_ID', this.googleClientId);
-        }
-        this.showGoogleConfigModal = false;
-        this.successMessage = 'Google Client ID saved!';
-    }
-
-    handleCopySnippet(event) {
-        const text = event.currentTarget.dataset.copy;
-        if (text && navigator.clipboard) {
-            navigator.clipboard.writeText(text);
-            this.successMessage = 'Callback URL copied to clipboard!';
-        }
     }
 
     // ----------------------------------------------------
